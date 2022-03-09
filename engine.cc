@@ -210,10 +210,10 @@ img::EasyImage draw2DLines (const Lines2D &lines , const int size , vector<doubl
     // Declare colors vector
     vector<double> originalColors;
     vector<unsigned int> newColors;
+    // Scale colors
     vector<unsigned int> bgColor = scaleColors(backgroundColor);
     // Determine x_min , y_min , x_max , y_max
     double x_min = 0, y_min = 0, x_max = 0, y_max = 0;
-    //double p1_x ; p1_y , p2_x , p2_y;
     // Loop through all the lines
     for( Line2D l : lines) {
         // Assign the points to temp variables
@@ -263,8 +263,8 @@ img::EasyImage draw2DLines (const Lines2D &lines , const int size , vector<doubl
     // Calculate for x and y
     double DC_x = d * ( (x_min + x_max) / 2 );
     double DC_y = d * ( (y_min + y_max) / 2 );
-    double dx = (imageWidth / 2) - DC_x;
-    double dy = (imageHeight / 2) - DC_y;
+    double dx = imageWidth / 2 - DC_x;
+    double dy = imageHeight / 2 - DC_y;
     // Declare temporary variables
     //int x1 , x2 , y1 , y2;
     // Loop through the lines again
@@ -311,21 +311,27 @@ Lines2D drawSystem (const LParser::LSystem2D &l_system , const int &size , vecto
     unsigned int initerations = l_system.get_nr_iterations();
 
     // Get initiating string
-    string startingString = l_system.get_replacement(initiator[0]);
+    string startingString = l_system.get_initiator();
     string endingString;
     // Replace symbols
     for( int i = 0; i < initerations; i++){
         for(char c : startingString){
-            if(c != '-' && c != '+' && c != '(' && c != ')'){
+            // Add the operators
+            if(c == '-' || c == '+' || c == '(' || c == ')'){
+                endingString += c;
+            }
+            // Replace the string
+            else{
                 endingString += l_system.get_replacement(c);
             }
         }
+        startingString = endingString;
+        endingString = "";
     }
     // Make a reference point
     Point2D currentPoint(0,0);
-
     // Loop through characters in initiating string
-    for( char c : endingString) {
+    for( char c : startingString) {
         // If angle must increase
         if (c == '+') {
             startingAngle += angle;
@@ -336,7 +342,7 @@ Lines2D drawSystem (const LParser::LSystem2D &l_system , const int &size , vecto
         }
         // If we must draw
         else if(l_system.draw(c)){
-            Line2D line(    Point2D(currentPoint.y , currentPoint.y) ,
+            Line2D line(    Point2D(currentPoint.x , currentPoint.y) ,
                             Point2D(currentPoint.x +  cos(startingAngle) , currentPoint.y + sin(startingAngle)) ,
                             Color(lineColor[0] , lineColor[1] , lineColor[2])
                             );
