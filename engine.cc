@@ -3,6 +3,7 @@
 #include "easy_image.h"
 #include "ini_configuration.h"
 #include "l_parser/l_parser.h"
+#include "vector/vector3d.h"
 #include <fstream>
 #include <iostream>
 #include <stdexcept>
@@ -39,7 +40,37 @@ public:
     Line2D(const Point2D &p1, const Point2D &p2, const Color &color) : p1(p1), p2(p2), color(color) {}
 };
 
-using Lines2D = vector<Line2D>;
+class Face {
+public:
+    // These indexes refer to points in the 'points' vector of the Figure-class
+    vector<int> point_indexes; // 2 for this exercise , 3+ later
+
+    Face(const vector<int> &point_indexes) : point_indexes(point_indexes) {}
+};
+
+class Figure {
+public:
+    vector<Vector3D> points;
+    vector<Face> faces;
+    Color color;
+
+    Figure(const vector<Vector3D> &points, const vector<Face> &faces, const Color &color) : points(points),
+                                                                                            faces(faces),
+                                                                                            color(color) {}
+    void applyTransformation(const Matrix &m){
+        // Multiply each vector with the matrix
+        for(Vector3D v : points){
+            v *= m;
+        }
+    }
+};
+
+// Declare new types
+
+typedef vector<Line2D> Lines2D;
+
+typedef vector<Figure> Figures3D;
+
 // Main functionality
 
 vector<unsigned int> scaleColors(vector<double> &originalColor){
@@ -354,6 +385,106 @@ Lines2D drawSystem (const LParser::LSystem2D &l_system , const int &size , vecto
         else {
             currentPoint.x += cos(startingAngle);
             currentPoint.y += sin(startingAngle);
+        }
+    }
+    return lines;
+}
+
+// Transformation functions
+
+Matrix scaleFigure(const double scale){
+    Matrix S;
+    S(1,1) = scale;
+    S(2,2) = scale;
+    S(3,3) = scale;
+    S(4,4) = scale;
+    return S;
+}
+
+Matrix rotateX(const double angle){
+    Matrix M_x;
+    M_x(2,2) = cos(angle);
+    M_x(2,3) = sin(angle);
+    M_x(3,2) = -sin(angle);
+    M_x(3,3) = cos(angle);
+    return M_x;
+}
+
+Matrix rotateY(const double angle){
+    Matrix M_y;
+    M_y(1,1) = cos(angle);
+    M_y(1,3) = -sin(angle);
+    M_y(3,1) = sin(angle);
+    M_y(3,3) = cos(angle);
+    return M_y;
+}
+
+Matrix rotateZ(const double angle){
+    Matrix M_z;
+    M_z(1,1) = cos(angle);
+    M_z(1,2) = sin(angle);
+    M_z(2,1) = -sin(angle);
+    M_z(2,2) = cos(angle);
+    return M_z;
+}
+
+Matrix translate(const Vector3D &vector){
+    Matrix T;
+    T(4,1) = vector[0];
+    T(4,2) = vector[1];
+    T(4,3) = vector[2];
+    return T;
+}
+
+Matrix eyePointTrans(const Vector3D &eyepoint , double &theta , double &phi , double &r){
+    // Make vector
+    Vector3D v = Vector3D::vector(0,0,-r);
+    // Return matrix for 2 rotations and a translation
+    return rotateZ(theta + M_1_PI/2) * rotateX(phi) * translate(v);
+}
+
+void toPolar(const Vector3D &point, double &theta , double &phi , double &r){
+    // Get the points
+    double x = point.x;
+    double y = point.y;
+    double z = point.z;
+    // Calculate r
+    r = sqrt(x*x + y*y + z*z);
+    // Calculate theta
+    theta = atan2(y , x);
+    // Calculate phi
+    phi = acos(z/r);
+}
+
+void applyTransformation(Figures3D &figs , const Matrix &m){
+    // Apply transformation to each figure
+    for (Figure f : figs){
+        f.applyTransformation(m);
+    }
+}
+
+Point2D doProjection(const Vector3D &point , const double d){
+    double x_1 = (d * point.x) / -point.z;
+    double y_1 = (d * point.y) / -point.z;
+}
+
+Lines2D doProjection(const Figures3D &figs){
+    Lines2D lines;
+    for(Figure f : figs){
+        for(Face face : f.faces){
+            // Get points index
+            int b_index = face.point_indexes[0];
+            int e_index = face.point_indexes[1];
+            // Get points
+            Vector3D beginP = f.points[b_index];
+            Vector3D endP = f.points[e_index];
+            // Make convert Vector3D to Point2D
+            Point2D newBeginP = doProjection(beginP,1);
+            Point2D newEndP = doProjection(endP,1);
+            // Create new line
+            Line2D newLine(newBeginP , newEndP , f.color);
+            // Push line back to vector
+            lines.push_back(newLine);
         }
     }
     return lines;
