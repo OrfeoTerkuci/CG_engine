@@ -324,64 +324,53 @@ img::EasyImage draw2DLines (const Lines2D &lines , const int size , vector<doubl
     return image;
 }
 
-Lines2D drawSystem (const LParser::LSystem2D &l_system , const int &size , vector<double> &backgroundColor , vector<double> &lineColor) {
-    // Create the list of lines
-    Lines2D lines;
-
-    // Get all the components of the LSystem
-    auto Alphabet = l_system.get_alphabet();
-    string initiator = l_system.get_initiator();
-    double angle = l_system.get_angle();
-    double startingAngle = l_system.get_starting_angle();
-
-    // Convert angles to radians
-    angle = ( angle * M_PI ) / 180;
-    startingAngle = ( startingAngle * M_PI ) / 180;
-
-    // Get inierations
-    unsigned int initerations = l_system.get_nr_iterations();
-
-    // Get initiating string
-    string startingString = l_system.get_initiator();
-    string endingString;
+string getEndString(const LParser::LSystem2D &l_system , string &startingString , string &endingString){
     // Replace symbols
-    for( int i = 0; i < initerations; i++){
-        for(char c : startingString){
-            // Add the operators
-            if(c == '-' || c == '+' || c == '(' || c == ')'){
-                endingString += c;
-            }
-            // Replace the string
-            else{
-                endingString += l_system.get_replacement(c);
-            }
+    for(char c : startingString){
+        // Add the operators
+        if(c == '-' || c == '+' || c == '(' || c == ')'){
+            endingString += c;
         }
-        startingString = endingString;
-        endingString = "";
+            // Replace the string
+        else{
+            endingString += l_system.get_replacement(c);
+        }
     }
-    // Make a reference point
-    Point2D currentPoint(0,0);
+    startingString = endingString;
+    endingString = "";
+    return startingString;
+}
+
+Lines2D createSystemLines (const LParser::LSystem2D &l_system , Lines2D &lines , string &startingString , string &endingString ,
+        double &startingAngle , double &angle , vector<double> &lineColor, double current_x , double current_y){
+    Point2D currentPoint(current_x,current_y);
     // Loop through characters in initiating string
     for( char c : startingString) {
         // If angle must increase
         if (c == '+') {
             startingAngle += angle;
         }
-        // If angle must decrease
+            // If angle must decrease
         else if (c == '-') {
             startingAngle -= angle;
         }
-        // If we must draw
+        else if (c == '('){
+            //lines = createSystemLines(l_system,lines,startingString,endingString,startingAngle,angle,lineColor,currentPoint.x,currentPoint.y);
+        }
+        else if (c == ')'){
+            //return lines;
+        }
+            // If we must draw
         else if(l_system.draw(c)){
             Line2D line(    Point2D(currentPoint.x , currentPoint.y) ,
                             Point2D(currentPoint.x +  cos(startingAngle) , currentPoint.y + sin(startingAngle)) ,
                             Color(lineColor[0] , lineColor[1] , lineColor[2])
-                            );
+            );
             lines.push_back(line);
             currentPoint.x += cos(startingAngle);
             currentPoint.y += sin(startingAngle);
         }
-        // If we mustn't draw
+            // If we mustn't draw
         else {
             currentPoint.x += cos(startingAngle);
             currentPoint.y += sin(startingAngle);
@@ -390,8 +379,35 @@ Lines2D drawSystem (const LParser::LSystem2D &l_system , const int &size , vecto
     return lines;
 }
 
-// Transformation functions
+Lines2D drawSystem (const LParser::LSystem2D &l_system , const int &size , vector<double> &backgroundColor , vector<double> &lineColor) {
+    // Create the list of lines
+    Lines2D lines;
 
+    // Get all the components of the LSystem
+    const auto &Alphabet = l_system.get_alphabet();
+    const string &initiator = l_system.get_initiator();
+    double angle = l_system.get_angle();
+    double startingAngle = l_system.get_starting_angle();
+
+    // Convert angles to radians
+    angle = ( angle * M_PI ) / 180;
+    startingAngle = ( startingAngle * M_PI ) / 180;
+
+    // Get inierations
+    unsigned int nr_iterations = l_system.get_nr_iterations();
+
+    // Get initiating string
+    string startingString = l_system.get_initiator();
+    string endingString;
+    // Replace symbols
+    for( int i = 0; i < nr_iterations; i++){
+        startingString = getEndString(l_system, startingString, endingString);
+    }
+    return createSystemLines(l_system,lines,startingString,endingString,startingAngle,angle,lineColor,0,0);
+}
+
+// Transformation functions
+/*
 Matrix scaleFigure(const double scale){
     Matrix S;
     S(1,1) = scale;
@@ -430,9 +446,9 @@ Matrix rotateZ(const double angle){
 
 Matrix translate(const Vector3D &vector){
     Matrix T;
-    T(4,1) = vector[0];
-    T(4,2) = vector[1];
-    T(4,3) = vector[2];
+    T(4,1) = vector.x;
+    T(4,2) = vector.y;
+    T(4,3) = vector.z;
     return T;
 }
 
@@ -489,7 +505,7 @@ Lines2D doProjection(const Figures3D &figs){
     }
     return lines;
 }
-
+*/
 img::EasyImage generate_image(const ini::Configuration &configuration)
 {
     /*
