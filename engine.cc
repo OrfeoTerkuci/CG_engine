@@ -72,7 +72,7 @@ public:
     // These indexes refer to points in the 'points' vector of the Figure-class
     vector<int> point_indexes; // 2 for this exercise , 3+ later
 
-    explicit Face(const vector<int> &point_indexes) : point_indexes(point_indexes) {}
+    Face(const vector<int> &point_indexes) : point_indexes(point_indexes) {}
 
     virtual ~Face() {
 
@@ -91,7 +91,7 @@ public:
                                                                                             color(color) {}
     void applyTransformation(const Matrix &m){
         // Multiply each vector with the matrix
-        for(Vector3D v : points){
+        for(Vector3D &v : points){
             v *= m;
         }
     }
@@ -469,7 +469,7 @@ Matrix scaleFigure(const double scale){
     S(1,1) = scale;
     S(2,2) = scale;
     S(3,3) = scale;
-    S(4,4) = scale;
+    S(4,4) = 1;
     return S;
 }
 
@@ -514,7 +514,7 @@ void toPolar(const Vector3D &point, double &theta , double &phi , double &r){
     double y = point.y;
     double z = point.z;
     // Calculate r
-    r = sqrt(x*x + y*y + z*z);
+    r = sqrt(x * x + y * y + z * z);
     // Calculate theta
     theta = atan2(y , x);
     // Calculate phi
@@ -530,15 +530,19 @@ Matrix eyePointTrans(const Vector3D &eyePoint , double &theta , double &phi , do
     // Make vector
     Vector3D v = Vector3D::vector(0,0,-r);
     toPolar(eyePoint , theta , phi , r);
-    // Return matrix for 2 rotations and a translation
-    return rotateZ(theta + M_1_PI/2) * rotateX(phi) * translate(v);
-}
 
-void applyTransformation(Figures3D &figs , const Matrix &m){
-    // Apply transformation to each figure
-    for (Figure *f : figs){
-        f->applyTransformation(m);
-    }
+    Matrix m;
+    m(1,1) = -sin(theta);
+    m(1,2) = -cos(theta) * cos(phi);
+    m(1,3) = cos(theta) * sin(phi);
+    m(2,1) = cos(theta);
+    m(2,2) = -sin(theta) * cos(phi);
+    m(2,3) = sin(theta) * sin(phi);
+    m(3,2) = sin(phi);
+    m(3,3) = cos(phi);
+    m(4,3) = -r;
+    // Return matrix for 2 rotations and a translation
+    return m;
 }
 
 Point2D doProjection(const Vector3D &point , const double d){
@@ -552,21 +556,22 @@ Lines2D doProjection(const Figures3D &figs){
     for(Figure *f : figs){
         for(Face face : f->faces){
             // Get points index
-            int b_index = face.point_indexes[0];
-                int e_index = face.point_indexes[1];
+            int b_index = face.point_indexes.at(0);
+            int e_index = face.point_indexes.at(1);
             // Get points
             Vector3D beginP = f->points[b_index];
             Vector3D endP = f->points[e_index];
+            /*
             if(beginP.z == 0){
                 continue;
             }
             if(endP.z == 0){
                 continue;
             }
-            // Make convert Vector3D to Point2D
-            Point2D newBeginP = doProjection(beginP,1);
-            Point2D newEndP = doProjection(endP,1);
-
+             */
+            // Convert Vector3D to Point2D
+            Point2D newBeginP = doProjection(beginP,1.0);
+            Point2D newEndP = doProjection(endP,1.0);
             // Create new line
             Line2D newLine(newBeginP , newEndP , f->color);
             // Push line back to vector
@@ -578,11 +583,6 @@ Lines2D doProjection(const Figures3D &figs){
 
 img::EasyImage generate_image(const ini::Configuration &configuration)
 {
-    /*
-     * [General]
-     * type = "<type van de opdracht>"
-     */
-
     // Get type
     string type = configuration["General"]["type"].as_string_or_die();
     // Case : type == "2DLSystem"
@@ -605,6 +605,12 @@ img::EasyImage generate_image(const ini::Configuration &configuration)
         vector<double> eye = configuration["General"]["eye"].as_double_tuple_or_die();
         vector<double> backgroundcolor = configuration["General"]["backgroundcolor"].as_double_tuple_or_die();
         int nrFigures = configuration["General"]["nrFigures"].as_int_or_die();
+        // Make the variables
+        double theta;
+        double phi;
+        double r;
+        Vector3D eyePoint = Vector3D::point(eye.at(0) , eye.at(1) , eye.at(2));
+        Matrix m_eye = eyePointTrans(eyePoint , theta , phi , r);
         // Create figures vector
         Figures3D figures;
         // Get figures
@@ -641,14 +647,11 @@ img::EasyImage generate_image(const ini::Configuration &configuration)
             Figure* newFigure;
             newFigure = new Figure(points , faces , Color( lineColor.at(0), lineColor.at(1), lineColor.at(2) ));
             Matrix m = scaleFigure(scale);
-            m *= rotateX(rotX);
-            m *= rotateY(rotY);
-            m *= rotateZ(rotZ);
-            double theta;
-            double phi;
-            double r;
-            Vector3D eyePoint = Vector3D::point(center.at(0) , center.at(1) , center.at(2));
-            m *= eyePointTrans(eyePoint , theta , phi , r);
+            m *= rotateX((rotX * M_PI) / 180);
+            m *= rotateY((rotY * M_PI) / 180);
+            m *= rotateZ((rotZ * M_PI) / 180);
+            m *= translate(Vector3D::point(center.at(0) , center.at(1) , center.at(2)));
+            m *= m_eye;
             newFigure->applyTransformation(m);
             // Add figure to vector of figures
             figures.push_back(newFigure);
