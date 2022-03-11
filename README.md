@@ -9,7 +9,7 @@ X: Niet werkend of niet geïmplementeerd
 |   | Functionaliteit      | Status |
 |---|---------------------------|---|
 | 1 | 2D L-systemen             | V |
-|   | Met haakjes               |   |
+|   | Met haakjes               | V |
 |   | Stochastisch              |   |
 | 2 | Transformaties            |   |
 |   | Eye-point                 |   |

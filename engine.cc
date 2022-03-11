@@ -21,6 +21,10 @@ public:
     double blue;
 
     Color(double red, double green, double blue) : red(red), green(green), blue(blue) {}
+
+    virtual ~Color() {
+
+    }
 };
 
 class Point2D {
@@ -29,6 +33,10 @@ public:
     double y;
 
     Point2D(double x, double y) : x(x), y(y) {}
+
+    virtual ~Point2D() {
+
+    }
 };
 
 class Line2D {
@@ -38,6 +46,10 @@ public:
     Color color;
 
     Line2D(const Point2D &p1, const Point2D &p2, const Color &color) : p1(p1), p2(p2), color(color) {}
+
+    virtual ~Line2D() {
+
+    }
 };
 
 class Face {
@@ -45,7 +57,11 @@ public:
     // These indexes refer to points in the 'points' vector of the Figure-class
     vector<int> point_indexes; // 2 for this exercise , 3+ later
 
-    Face(const vector<int> &point_indexes) : point_indexes(point_indexes) {}
+    explicit Face(const vector<int> &point_indexes) : point_indexes(point_indexes) {}
+
+    virtual ~Face() {
+
+    }
 };
 
 class Figure {
@@ -63,6 +79,10 @@ public:
             v *= m;
         }
     }
+
+    virtual ~Figure() {
+
+    }
 };
 
 // Declare new types
@@ -72,6 +92,8 @@ typedef vector<Line2D> Lines2D;
 typedef vector<Figure> Figures3D;
 
 // Main functionality
+
+// Session 0: Optional
 
 vector<unsigned int> scaleColors(vector<double> &originalColor){
     vector<unsigned int> newColors;
@@ -237,6 +259,8 @@ img::EasyImage createDiamond(int &imageWidth, int &imageHeight, int &linesNumber
     return image;
 }
 
+// Session 1: L-Systems
+
 img::EasyImage draw2DLines (const Lines2D &lines , const int size , vector<double> &backgroundColor){
     // Declare colors vector
     vector<double> originalColors;
@@ -336,32 +360,46 @@ string getEndString(const LParser::LSystem2D &l_system , string &startingString 
             endingString += l_system.get_replacement(c);
         }
     }
+    // Update startingString
     startingString = endingString;
     endingString = "";
     return startingString;
 }
 
 Lines2D createSystemLines (const LParser::LSystem2D &l_system , Lines2D &lines , string &startingString , string &endingString ,
-        double &startingAngle , double &angle , vector<double> &lineColor, double current_x , double current_y){
-    Point2D currentPoint(current_x,current_y);
+        double &startingAngle , double &angle , vector<double> &lineColor, Point2D &currentPoint , int current_c){
+    // Create variables to store the current x and y coordinate
+    vector<double> current_x;
+    vector<double> current_y;
+    vector<double> current_angle;
     // Loop through characters in initiating string
-    for( char c : startingString) {
+    for( int i = current_c; i < startingString.length(); i++) {
         // If angle must increase
-        if (c == '+') {
+        if (startingString[i] == '+') {
             startingAngle += angle;
         }
             // If angle must decrease
-        else if (c == '-') {
+        else if (startingString[i] == '-') {
             startingAngle -= angle;
         }
-        else if (c == '('){
+        else if (startingString[i] == '('){
+            // Save coordinates, draw everything within the bracket, return to saved coordinates
+            current_x.push_back(currentPoint.x);
+            current_y.push_back(currentPoint.y);
+            current_angle.push_back(startingAngle);
+            //createSystemLines(l_system,lines,startingString,endingString,startingAngle,angle,lineColor,currentPoint,i+1);
             //lines = createSystemLines(l_system,lines,startingString,endingString,startingAngle,angle,lineColor,currentPoint.x,currentPoint.y);
         }
-        else if (c == ')'){
-            //return lines;
+        else if (startingString[i] == ')'){
+            currentPoint.x = current_x[current_x.size()-1];
+            current_x.pop_back();
+            currentPoint.y = current_y[current_y.size()-1];
+            current_y.pop_back();
+            startingAngle = current_angle[current_angle.size()-1];
+            current_angle.pop_back();
         }
             // If we must draw
-        else if(l_system.draw(c)){
+        else if(l_system.draw(startingString[i])){
             Line2D line(    Point2D(currentPoint.x , currentPoint.y) ,
                             Point2D(currentPoint.x +  cos(startingAngle) , currentPoint.y + sin(startingAngle)) ,
                             Color(lineColor[0] , lineColor[1] , lineColor[2])
@@ -403,7 +441,8 @@ Lines2D drawSystem (const LParser::LSystem2D &l_system , const int &size , vecto
     for( int i = 0; i < nr_iterations; i++){
         startingString = getEndString(l_system, startingString, endingString);
     }
-    return createSystemLines(l_system,lines,startingString,endingString,startingAngle,angle,lineColor,0,0);
+    Point2D currentPoint(0,0);
+    return createSystemLines(l_system,lines,startingString,endingString,startingAngle,angle,lineColor,currentPoint,0);
 }
 
 // Transformation functions
