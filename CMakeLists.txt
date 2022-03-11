@@ -19,6 +19,7 @@ set(engine_sources
         engine.cc
         ini_configuration.cc
         l_parser/l_parser.cc
+        vector/vector3d.cc
         )
 ############################################################
 # Create an executable

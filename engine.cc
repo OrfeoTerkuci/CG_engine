@@ -39,6 +39,20 @@ public:
     }
 };
 
+class Point3D {
+
+public:
+    double x;
+    double y;
+    double z;
+
+    Point3D(double x, double y, double z) : x(x), y(y), z(z) {}
+
+    virtual ~Point3D() {
+
+    }
+};
+
 class Line2D {
 public:
     Point2D p1;
@@ -53,6 +67,7 @@ public:
 };
 
 class Face {
+
 public:
     // These indexes refer to points in the 'points' vector of the Figure-class
     vector<int> point_indexes; // 2 for this exercise , 3+ later
@@ -65,6 +80,7 @@ public:
 };
 
 class Figure {
+
 public:
     vector<Vector3D> points;
     vector<Face> faces;
@@ -89,7 +105,7 @@ public:
 
 typedef vector<Line2D> Lines2D;
 
-typedef vector<Figure> Figures3D;
+typedef vector<Figure*> Figures3D;
 
 // Main functionality
 
@@ -445,8 +461,9 @@ Lines2D drawSystem (const LParser::LSystem2D &l_system , const int &size , vecto
     return createSystemLines(l_system,lines,startingString,endingString,startingAngle,angle,lineColor,currentPoint,0);
 }
 
+// Session 3 : 3D Lines
 // Transformation functions
-/*
+
 Matrix scaleFigure(const double scale){
     Matrix S;
     S(1,1) = scale;
@@ -491,13 +508,6 @@ Matrix translate(const Vector3D &vector){
     return T;
 }
 
-Matrix eyePointTrans(const Vector3D &eyepoint , double &theta , double &phi , double &r){
-    // Make vector
-    Vector3D v = Vector3D::vector(0,0,-r);
-    // Return matrix for 2 rotations and a translation
-    return rotateZ(theta + M_1_PI/2) * rotateX(phi) * translate(v);
-}
-
 void toPolar(const Vector3D &point, double &theta , double &phi , double &r){
     // Get the points
     double x = point.x;
@@ -508,43 +518,64 @@ void toPolar(const Vector3D &point, double &theta , double &phi , double &r){
     // Calculate theta
     theta = atan2(y , x);
     // Calculate phi
-    phi = acos(z/r);
+    if(r != 0){
+        phi = acos(z/r);
+    }
+    else{
+        phi = 0;
+    }
+}
+
+Matrix eyePointTrans(const Vector3D &eyePoint , double &theta , double &phi , double &r){
+    // Make vector
+    Vector3D v = Vector3D::vector(0,0,-r);
+    toPolar(eyePoint , theta , phi , r);
+    // Return matrix for 2 rotations and a translation
+    return rotateZ(theta + M_1_PI/2) * rotateX(phi) * translate(v);
 }
 
 void applyTransformation(Figures3D &figs , const Matrix &m){
     // Apply transformation to each figure
-    for (Figure f : figs){
-        f.applyTransformation(m);
+    for (Figure *f : figs){
+        f->applyTransformation(m);
     }
 }
 
 Point2D doProjection(const Vector3D &point , const double d){
     double x_1 = (d * point.x) / -point.z;
     double y_1 = (d * point.y) / -point.z;
+    return Point2D(x_1 , y_1);
 }
 
 Lines2D doProjection(const Figures3D &figs){
     Lines2D lines;
-    for(Figure f : figs){
-        for(Face face : f.faces){
+    for(Figure *f : figs){
+        for(Face face : f->faces){
             // Get points index
             int b_index = face.point_indexes[0];
-            int e_index = face.point_indexes[1];
+                int e_index = face.point_indexes[1];
             // Get points
-            Vector3D beginP = f.points[b_index];
-            Vector3D endP = f.points[e_index];
+            Vector3D beginP = f->points[b_index];
+            Vector3D endP = f->points[e_index];
+            if(beginP.z == 0){
+                continue;
+            }
+            if(endP.z == 0){
+                continue;
+            }
             // Make convert Vector3D to Point2D
             Point2D newBeginP = doProjection(beginP,1);
             Point2D newEndP = doProjection(endP,1);
+
             // Create new line
-            Line2D newLine(newBeginP , newEndP , f.color);
+            Line2D newLine(newBeginP , newEndP , f->color);
             // Push line back to vector
             lines.push_back(newLine);
         }
     }
     return lines;
 }
-*/
+
 img::EasyImage generate_image(const ini::Configuration &configuration)
 {
     /*
@@ -557,9 +588,9 @@ img::EasyImage generate_image(const ini::Configuration &configuration)
     // Case : type == "2DLSystem"
     if (type == "2DLSystem"){
         int size = configuration["General"]["size"].as_int_or_die();
-        vector<double> backgroundColor = configuration["General"]["backgroundcolor"];
-        string input_filename = configuration["2DLSystem"]["inputfile"];
-        vector<double> lineColor = configuration["2DLSystem"]["color"];
+        vector<double> backgroundColor = configuration["General"]["backgroundcolor"].as_double_tuple_or_die();
+        string input_filename = configuration["2DLSystem"]["inputfile"].as_string_or_die();
+        vector<double> lineColor = configuration["2DLSystem"]["color"].as_double_tuple_or_die();
         // Initialize the parser
         LParser::LSystem2D l_system;
         ifstream input_stream(input_filename);
@@ -567,6 +598,64 @@ img::EasyImage generate_image(const ini::Configuration &configuration)
         input_stream.close();
         return draw2DLines( drawSystem(l_system , size , backgroundColor , lineColor ) , size , backgroundColor );
     }
+
+    else if (type == "Wireframe"){
+        // Get general properties
+        int size = configuration["General"]["size"].as_int_or_die();
+        vector<double> eye = configuration["General"]["eye"].as_double_tuple_or_die();
+        vector<double> backgroundcolor = configuration["General"]["backgroundcolor"].as_double_tuple_or_die();
+        int nrFigures = configuration["General"]["nrFigures"].as_int_or_die();
+        // Create figures vector
+        Figures3D figures;
+        // Get figures
+        for (int i = 0; i < nrFigures; i++){
+            // Get all attributes
+            // Get figure type
+            string figure_type = configuration["Figure"+to_string(i)]["type"].as_string_or_default("LineDrawing");
+            double scale = configuration["Figure"+to_string(i)]["scale"].as_double_or_default(1.0);
+            double rotX = configuration["Figure"+to_string(i)]["rotateX"].as_double_or_default(0);
+            double rotY = configuration["Figure"+to_string(i)]["rotateY"].as_double_or_default(0);
+            double rotZ = configuration["Figure"+to_string(i)]["rotateZ"].as_double_or_default(0);
+            vector<double> center = configuration["Figure"+to_string(i)]["center"].as_double_tuple_or_default({0,0,0});
+            vector<double> lineColor = configuration["Figure"+to_string(i)]["color"].as_double_tuple_or_default({0,0,0});
+            int nrPoints = configuration["Figure"+to_string(i)]["nrPoints"].as_int_or_die();
+            int nrLines = configuration["Figure"+to_string(i)]["nrLines"].as_int_or_die();
+            // Make new Figure class
+            vector<Vector3D> points;
+            vector<Face> faces;
+
+            // Make temporary vector;
+            vector<double> point_to_add;
+            vector<int> line_to_add;
+            // Get points
+            for (int j = 0; j < nrPoints; j++){
+                point_to_add = configuration["Figure"+to_string(i)]["point"+to_string(j)].as_double_tuple_or_die();
+                points.push_back(Vector3D::point(point_to_add.at(0) , point_to_add.at(1) , point_to_add.at(2)));
+            }
+            // Get lines
+            for (int j = 0; j < nrLines; j++){
+                line_to_add = configuration["Figure"+to_string(i)]["line"+to_string(j)].as_int_tuple_or_die();
+                faces.push_back(Face({line_to_add.at(0) , line_to_add.at(1)}));
+            }
+            // Create new figure
+            Figure* newFigure;
+            newFigure = new Figure(points , faces , Color( lineColor.at(0), lineColor.at(1), lineColor.at(2) ));
+            Matrix m = scaleFigure(scale);
+            m *= rotateX(rotX);
+            m *= rotateY(rotY);
+            m *= rotateZ(rotZ);
+            double theta;
+            double phi;
+            double r;
+            Vector3D eyePoint = Vector3D::point(center.at(0) , center.at(1) , center.at(2));
+            m *= eyePointTrans(eyePoint , theta , phi , r);
+            newFigure->applyTransformation(m);
+            // Add figure to vector of figures
+            figures.push_back(newFigure);
+        }
+        return draw2DLines(doProjection(figures) , size , backgroundcolor);
+    }
+
     /*
      * [ImageProperties]
      * width = width_of_image
@@ -580,7 +669,7 @@ img::EasyImage generate_image(const ini::Configuration &configuration)
         return createColorRectangle(width, height);
     }
     // Case : type == "IntroBlocks"
-    if (type == "IntroBlocks"){
+    else if (type == "IntroBlocks"){
         int blocksInX = configuration["BlockProperties"]["nrXBlocks"].as_int_or_die();
         int blocksInY = configuration["BlockProperties"]["nrYBlocks"].as_int_or_die();
         vector<double> colorWhite = configuration["BlockProperties"]["colorWhite"].as_double_tuple_or_die();
@@ -589,11 +678,11 @@ img::EasyImage generate_image(const ini::Configuration &configuration)
         return createBlocks(width, height, blocksInX, blocksInY, colorWhite, colorBlack, invertColors);
     }
     // Case : type == "IntroLines"
-    if (type == "IntroLines"){
+    else if (type == "IntroLines"){
         string figure = configuration["LineProperties"]["figure"].as_string_or_die();
-        vector<double> backgroundColor = configuration["LineProperties"]["backgroundcolor"];
-        vector<double> lineColor = configuration["LineProperties"]["lineColor"];
-        int linesNumber = configuration["LineProperties"]["nrLines"];
+        vector<double> backgroundColor = configuration["LineProperties"]["backgroundcolor"].as_double_tuple_or_die();
+        vector<double> lineColor = configuration["LineProperties"]["lineColor"].as_double_tuple_or_die();
+        int linesNumber = configuration["LineProperties"]["nrLines"].as_int_or_die();
         // Case: figure == "QuarterCircle"
         if(figure == "QuarterCircle"){
             return createQuarterCircle(width,height,linesNumber,backgroundColor,lineColor);
