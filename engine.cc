@@ -76,7 +76,7 @@ class Face {
 
 public:
     // These indexes refer to points in the 'points' vector of the Figure-class
-    vector<int> point_indexes; // 2 for this exercise , 3+ later
+    vector<int> point_indexes;
 
     Face(const vector<int> &point_indexes) : point_indexes(point_indexes) {}
 
@@ -465,7 +465,7 @@ Lines2D drawSystem (const LParser::LSystem2D &l_system , const int &size , vecto
     return createSystemLines(l_system,lines,startingString,endingString,startingAngle,angle,lineColor,currentPoint,0);
 }
 
-// Session 3 : 3D Lines
+// Session 2 : 3D Lines
 // Transformation functions
 
 Matrix scaleFigure(const double scale){
@@ -565,14 +565,6 @@ Lines2D doProjection(const Figures3D &figs){
             // Get points
             Vector3D beginP = f->points[b_index];
             Vector3D endP = f->points[e_index];
-            /*
-            if(beginP.z == 0){
-                continue;
-            }
-            if(endP.z == 0){
-                continue;
-            }
-             */
             // Convert Vector3D to Point2D
             Point2D newBeginP = doProjection(beginP,1.0);
             Point2D newEndP = doProjection(endP,1.0);
@@ -583,6 +575,275 @@ Lines2D doProjection(const Figures3D &figs){
         }
     }
     return lines;
+}
+
+// Session 3: Figures - Platonic bodies
+
+Figure createCube( vector<double>&lineColor , Matrix &m ){
+    // Points array
+    double Points_T [3][8] = {
+            { 1 , -1 , 1 , -1 , 1 , -1 , 1 , -1 },
+            { -1 , 1 , 1 , -1 , 1 , -1 , -1 , 1 },
+            { -1, -1 , 1 , 1 , -1 , -1 , 1 , 1 }
+    };
+    // Faces array
+    int Faces_T [4][6] = {
+            { 1 , 5 , 2 , 6 , 7 , 1 },
+            { 5 , 2 , 6 , 1 , 3 , 6 },
+            { 3 , 8 , 4 , 7 , 8 , 2 },
+            { 7 , 3 , 8 , 4 , 4 , 5 }
+    };
+    // Create all the points
+    vector<Vector3D> points;
+    for (int i = 0; i < 8; ++i) {
+        points.push_back(Vector3D::point(Points_T[0][i],Points_T[1][i],Points_T[2][i]));
+    }
+    // Create all the faces
+    vector<Face> faces;
+    for (int j = 0; j < 6; ++j) {
+        faces.push_back( Face( { Faces_T[0][j] , Faces_T[1][j] , Faces_T[2][j] , Faces_T[3][j] } ) );
+    }
+    // Create new figure
+    Figure newCube( points , faces , Color( lineColor.at(0) , lineColor.at(1) , lineColor.at(2) ) );
+    // Apply transformation
+    newCube.applyTransformation(m);
+    return newCube;
+}
+
+Figure createTetrahedron( vector<double>&lineColor , Matrix &m ){
+    // Points array
+    double Points_T [3][4] = {
+            { 1 , -1 , 1 , -1 },
+            { -1 , 1 , 1 , -1 },
+            { -1 , -1 , 1 , 1 }
+    };
+    // Faces array
+    int Faces_T [3][4] = {
+            { 1 , 2 , 1 , 1 },
+            { 2 , 4 , 4 , 3 },
+            { 3 , 3 , 2 , 4 }
+    };
+    // Create all the points
+    vector<Vector3D> points;
+    for (int i = 0; i < 4; ++i) {
+        points.push_back(Vector3D::point(Points_T[0][i] , Points_T[1][i] , Points_T[2][i] ) );
+    }
+    // Create faces
+    vector<Face> faces;
+    for (int j = 0; j < 4; ++j) {
+        faces.push_back( Face( { Faces_T[0][j] , Faces_T[1][j] , Faces_T[2][j] } ) );
+    }
+    // Create new figure
+    Figure newTetra( points , faces , Color( lineColor.at(0) , lineColor.at(1) , lineColor.at(2) ) );
+    // Apply transformation
+    newTetra.applyTransformation(m);
+    return newTetra;
+}
+
+Figure createOctahedron( vector<double>&lineColor , Matrix &m ){
+    // Points array
+    double Points_T [3][6] = {
+            { 1 , 0 ,-1 , 0 , 0 , 0 },
+            { 0 , 1 , 0 , -1 , 0 , 0 },
+            { 0 , 0 , 0 , 0 , -1 , -1 }
+    };
+    // Faces array
+    int Faces_T [3][8] = {
+            { 1 , 2 , 3 , 4 , 2 , 3 , 4 , 1},
+            { 2 , 3 , 4 , 1 , 1 , 2 , 3 , 4},
+            { 6 , 6 , 6 , 6 , 5 , 5 , 5 , 5}
+    };
+    // Create all the points
+    vector<Vector3D> points;
+    for (int i = 0; i < 6; ++i) {
+        points.push_back(Vector3D::point(Points_T[0][i] , Points_T[1][i] , Points_T[2][i] ) );
+    }
+    // Create faces
+    vector<Face> faces;
+    for (int j = 0; j < 8; ++j) {
+        faces.push_back( Face( { Faces_T[0][j] , Faces_T[1][j] , Faces_T[2][j] } ) );
+    }
+    // Create new figure
+    Figure newOcta( points , faces , Color( lineColor.at(0) , lineColor.at(1) , lineColor.at(2) ) );
+    // Apply transformation
+    newOcta.applyTransformation(m);
+    return newOcta;
+}
+
+Figure createIcosahedron( vector<double>&lineColor , Matrix &m ){
+    // Points array
+    double Points_T [3][12];
+    Points_T[0][0] = 0;
+    Points_T[1][0] = 0;
+    Points_T[2][0] = sqrt( 5 / 2 );
+
+    for (int k = 1; k < 6; ++k) {
+        Points_T[0][k] = cos( ( 2 * M_PI * ( k - 2 ) ) / 5 );
+        Points_T[1][k] = sin( ( 2 * M_PI * ( k - 2 ) ) / 5 );
+        Points_T[2][k] = 0.5;
+    }
+
+    for (int l = 6; l < 11; ++l) {
+        Points_T[0][l] = cos( ( M_PI / 5 ) + ( ( l - 7 ) * ( 2 * M_PI ) ) / 5 );
+        Points_T[1][l] = sin( ( M_PI / 5 ) + ( ( l - 7 ) * ( 2 * M_PI ) ) / 5 );
+        Points_T[2][l] = -0.5;
+    }
+
+    Points_T[0][11] = 0;
+    Points_T[1][11] = 0;
+    Points_T[2][11] = -sqrt( 5 / 2 );
+
+    // Faces array
+    int Faces_T [3][20] = {
+            { 1 , 1 , 1 , 1 , 1 , 2 , 3 , 3 , 4 , 4 , 5 , 5 , 6 , 6 , 2 , 12 , 12 , 12 , 12 , 12 },
+            { 2 , 3 , 4 , 5 , 6 , 7 , 7 , 8 , 8 , 9 , 9 , 10 , 10 , 11 , 11 , 8 , 9 , 10 , 11 , 7 },
+            { 3 , 4 , 5 , 6 , 2 , 3 , 8 , 4 , 9 , 5 , 10 , 6 , 11 , 2 , 7 , 7 , 8 , 9 , 10 , 11 }
+    };
+
+    // Create all the points
+    vector<Vector3D> points;
+    for (int i = 0; i < 12; ++i) {
+        points.push_back(Vector3D::point(Points_T[0][i] , Points_T[1][i] , Points_T[2][i] ) );
+    }
+    // Create faces
+    vector<Face> faces;
+    for (int j = 0; j < 20; ++j) {
+        faces.push_back( Face( { Faces_T[0][j] , Faces_T[1][j] , Faces_T[2][j] } ) );
+    }
+    // Create new figure
+    Figure newIso( points , faces , Color( lineColor.at(0) , lineColor.at(1) , lineColor.at(2) ) );
+    // Apply transformation
+    newIso.applyTransformation(m);
+    return newIso;
+}
+
+Figure createDodecahedron( vector<double>&lineColor , Matrix &m ){
+    // Points array
+    double Points_T [3][12];
+    // Create isocahedron
+    Figure newISO = createIcosahedron(lineColor , m);
+    int count = 0;
+    for (Face f : newISO.faces){
+        Vector3D p4 = Vector3D::point(0 , 0 , 0);
+        for (int i = 0; i < 3; ++i) {
+            p4 += newISO.points.at(f.point_indexes.at(i));
+        }
+        Points_T[0][count] = p4.x;
+        Points_T[1][count] = p4.y;
+        Points_T[2][count] = p4.z;
+    }
+    // Faces array
+    int Faces_T [5][12] = {
+            { 1 , 1 , 2 , 3 , 4 , 5 , 20 , 20 , 19 , 18 , 17 , 16 },
+            { 2 , 6 , 8 , 10 , 12 , 14 , 19 , 15 , 13 , 11 , 9 , 7 },
+            { 3 , 7 , 9 , 11 , 13 , 15 , 18 , 14 , 12 , 10 , 8 , 6 },
+            { 4 , 8 , 10 , 12 , 14 , 6 , 17 , 13 , 11 , 9 , 7 , 15 },
+            { 5 , 2 , 3 , 4 , 5 , 1 , 16 , 19 , 18 , 17 , 16 , 20 }
+    };
+    // Create all the points
+    vector<Vector3D> points;
+    for (int i = 0; i < 12; ++i) {
+        points.push_back(Vector3D::point(Points_T[0][i] , Points_T[1][i] , Points_T[2][i] ) );
+    }
+    // Create faces
+    vector<Face> faces;
+    for (int j = 0; j < 20; ++j) {
+        faces.push_back( Face( { Faces_T[0][j] , Faces_T[1][j] , Faces_T[2][j] } ) );
+    }
+    // Create new figure
+    Figure newDodeca( points , faces , Color( lineColor.at(0) , lineColor.at(1) , lineColor.at(2) ) );
+    // Apply transformation
+    newDodeca.applyTransformation(m);
+    return newDodeca;
+}
+
+Figure createCylinder(){
+
+}
+
+Figure createCone(){
+
+}
+
+Figure createSphere(){
+
+}
+
+Figure createTorus(){
+
+}
+
+Figure drawFigure(string &figureType , const ini::Configuration &configuration){
+
+}
+
+Figure* drawLineDrawing(double &scale , double &rotX , double &rotY , double &rotZ , int &nrPoints , int &nrLines ,
+                       const ini::Configuration &configuration , vector<double> &lineColor , vector<double> &center ,
+                       Matrix &m_eye , int &i){
+
+    // Make new Figure class
+    vector<Vector3D> points;
+    vector<Face> faces;
+
+    // Make temporary vector;
+    vector<double> point_to_add;
+    vector<int> line_to_add;
+    // Get points
+    for (int j = 0; j < nrPoints; j++){
+        point_to_add = configuration["Figure"+to_string(i)]["point"+to_string(j)].as_double_tuple_or_die();
+        points.push_back(Vector3D::point(point_to_add.at(0) , point_to_add.at(1) , point_to_add.at(2)));
+    }
+    // Get lines
+    for (int j = 0; j < nrLines; j++){
+        line_to_add = configuration["Figure"+to_string(i)]["line"+to_string(j)].as_int_tuple_or_die();
+        faces.push_back(Face({line_to_add.at(0) , line_to_add.at(1)}));
+    }
+    // Create new figure
+    Figure* newFigure;
+    newFigure = new Figure(points , faces , Color( lineColor.at(0), lineColor.at(1), lineColor.at(2) ));
+    Matrix m = scaleFigure(scale);
+    m *= rotateX((rotX * M_PI) / 180);
+    m *= rotateY((rotY * M_PI) / 180);
+    m *= rotateZ((rotZ * M_PI) / 180);
+    m *= translate(Vector3D::point(center.at(0) , center.at(1) , center.at(2)));
+    m *= m_eye;
+    newFigure->applyTransformation(m);
+    return newFigure;
+}
+
+Figures3D drawWireframe(int &size , vector<double> &eye , vector<double> &backgroundcolor , int &nrFigures , const ini::Configuration &configuration ){
+    // Make the variables
+    double theta;
+    double phi;
+    double r;
+    Vector3D eyePoint = Vector3D::point(eye.at(0) , eye.at(1) , eye.at(2));
+    Matrix m_eye = eyePointTrans(eyePoint , theta , phi , r);
+    // Create figures vector
+    Figures3D figures;
+    // Get figures
+    for (int i = 0; i < nrFigures; i++){
+        // Get all attributes
+        // Get figure type
+        string figure_type = configuration["Figure"+to_string(i)]["type"].as_string_or_die();
+        // Get common attributes
+        if (figure_type == "LineDrawing"){
+            double scale = configuration["Figure"+to_string(i)]["scale"].as_double_or_default(1.0);
+            double rotX = configuration["Figure"+to_string(i)]["rotateX"].as_double_or_default(0);
+            double rotY = configuration["Figure"+to_string(i)]["rotateY"].as_double_or_default(0);
+            double rotZ = configuration["Figure"+to_string(i)]["rotateZ"].as_double_or_default(0);
+            vector<double> center = configuration["Figure"+to_string(i)]["center"].as_double_tuple_or_default({0,0,0});
+            vector<double> lineColor = configuration["Figure"+to_string(i)]["color"].as_double_tuple_or_default({0,0,0});
+            int nrPoints = configuration["Figure"+to_string(i)]["nrPoints"].as_int_or_die();
+            int nrLines = configuration["Figure"+to_string(i)]["nrLines"].as_int_or_die();
+
+            // Add figure to vector of figures
+            Figure* newFigure = drawLineDrawing(scale , rotX , rotY , rotZ , nrPoints , nrLines , configuration ,
+                                               lineColor , center , m_eye , i);
+            figures.push_back(newFigure);
+        }
+
+    }
+    return figures;
 }
 
 img::EasyImage generate_image(const ini::Configuration &configuration)
@@ -609,58 +870,10 @@ img::EasyImage generate_image(const ini::Configuration &configuration)
         vector<double> eye = configuration["General"]["eye"].as_double_tuple_or_die();
         vector<double> backgroundcolor = configuration["General"]["backgroundcolor"].as_double_tuple_or_die();
         int nrFigures = configuration["General"]["nrFigures"].as_int_or_die();
-        // Make the variables
-        double theta;
-        double phi;
-        double r;
-        Vector3D eyePoint = Vector3D::point(eye.at(0) , eye.at(1) , eye.at(2));
-        Matrix m_eye = eyePointTrans(eyePoint , theta , phi , r);
-        // Create figures vector
-        Figures3D figures;
-        // Get figures
-        for (int i = 0; i < nrFigures; i++){
-            // Get all attributes
-            // Get figure type
-            string figure_type = configuration["Figure"+to_string(i)]["type"].as_string_or_default("LineDrawing");
-            double scale = configuration["Figure"+to_string(i)]["scale"].as_double_or_default(1.0);
-            double rotX = configuration["Figure"+to_string(i)]["rotateX"].as_double_or_default(0);
-            double rotY = configuration["Figure"+to_string(i)]["rotateY"].as_double_or_default(0);
-            double rotZ = configuration["Figure"+to_string(i)]["rotateZ"].as_double_or_default(0);
-            vector<double> center = configuration["Figure"+to_string(i)]["center"].as_double_tuple_or_default({0,0,0});
-            vector<double> lineColor = configuration["Figure"+to_string(i)]["color"].as_double_tuple_or_default({0,0,0});
-            int nrPoints = configuration["Figure"+to_string(i)]["nrPoints"].as_int_or_die();
-            int nrLines = configuration["Figure"+to_string(i)]["nrLines"].as_int_or_die();
-            // Make new Figure class
-            vector<Vector3D> points;
-            vector<Face> faces;
 
-            // Make temporary vector;
-            vector<double> point_to_add;
-            vector<int> line_to_add;
-            // Get points
-            for (int j = 0; j < nrPoints; j++){
-                point_to_add = configuration["Figure"+to_string(i)]["point"+to_string(j)].as_double_tuple_or_die();
-                points.push_back(Vector3D::point(point_to_add.at(0) , point_to_add.at(1) , point_to_add.at(2)));
-            }
-            // Get lines
-            for (int j = 0; j < nrLines; j++){
-                line_to_add = configuration["Figure"+to_string(i)]["line"+to_string(j)].as_int_tuple_or_die();
-                faces.push_back(Face({line_to_add.at(0) , line_to_add.at(1)}));
-            }
-            // Create new figure
-            Figure* newFigure;
-            newFigure = new Figure(points , faces , Color( lineColor.at(0), lineColor.at(1), lineColor.at(2) ));
-            Matrix m = scaleFigure(scale);
-            m *= rotateX((rotX * M_PI) / 180);
-            m *= rotateY((rotY * M_PI) / 180);
-            m *= rotateZ((rotZ * M_PI) / 180);
-            m *= translate(Vector3D::point(center.at(0) , center.at(1) , center.at(2)));
-            m *= m_eye;
-            newFigure->applyTransformation(m);
-            // Add figure to vector of figures
-            figures.push_back(newFigure);
-        }
-        return draw2DLines(doProjection(figures) , size , backgroundcolor);
+        return draw2DLines(doProjection(drawWireframe(size , eye , backgroundcolor , nrFigures , configuration)) ,
+                size , backgroundcolor);
+
     }
 
     /*
