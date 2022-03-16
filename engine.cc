@@ -189,9 +189,7 @@ img::EasyImage createBlocks(int &imageWidth, int &imageHeight, int &blocksInX, i
                 image(i,j).green = newColorBlack.at(1);
                 image(i,j).blue = newColorBlack.at(2);
             }
-            //image(i,j).red = i;
-            //image(i,j).green = j;
-            //image(i,j).blue = (i+j)%imageHeight;
+
         }
     }
     return image;
