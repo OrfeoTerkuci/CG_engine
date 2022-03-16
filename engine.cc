@@ -5,12 +5,18 @@
 #include "l_parser/l_parser.h"
 #include "vector/vector3d.h"
 #include <fstream>
+#define _USE_MATH_DEFINES
+#include <cmath>
 #include <iostream>
 #include <stdexcept>
 #include <string>
-#include <cmath>
 #include <list>
-
+// For VS Code
+/*
+#ifndef M_PI
+    #define M_PI 3.14159265358979323846
+#endif
+*/
 using namespace std;
 
 // Declaring data structures
