@@ -10,7 +10,7 @@ X: Niet werkend of niet geïmplementeerd
 |---|---------------------------|---|
 | 1 | 2D L-systemen             | V |
 |   | Met haakjes               | V |
-|   | Stochastisch              |   |
+|   | Stochastisch              | X |
 | 2 | Transformaties            | V |
 |   | Eye-point                 | V |
 |   | Projectie                 | V |
