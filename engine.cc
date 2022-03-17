@@ -556,7 +556,8 @@ Point2D doProjection(const Vector3D &point , const double d){
 }
 
 void getLinePointIndex(Face &face, Figure* &f, Lines2D &lines){
-    int b_index , e_index;
+    int b_index = 0;
+    int e_index = 0;
     for (int i = 0; i < face.point_indexes.size(); ++i) {
         if (i == face.point_indexes.size() - 1) {
             b_index = face.point_indexes.at(i);
@@ -579,7 +580,7 @@ void getLinePointIndex(Face &face, Figure* &f, Lines2D &lines){
     }
 }
 
-Lines2D doProjection(const Figures3D &figs){
+Lines2D doProjection(Figures3D &figs){
     Lines2D lines;
     for(Figure *f : figs){
         for(Face face : f->faces){
@@ -900,7 +901,9 @@ img::EasyImage generate_image(const ini::Configuration &configuration)
         vector<double> backgroundcolor = configuration["General"]["backgroundcolor"].as_double_tuple_or_die();
         int nrFigures = configuration["General"]["nrFigures"].as_int_or_die();
         // Draw the wireframe
-        return draw2DLines(doProjection(drawWireframe(size , eye , backgroundcolor , nrFigures , configuration)) ,
+        Figures3D figures = drawWireframe(size , eye , backgroundcolor , nrFigures , configuration);
+        Lines2D lines = doProjection(figures);
+        return draw2DLines(lines ,
                 size , backgroundcolor);
 
     }
