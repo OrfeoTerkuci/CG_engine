@@ -555,23 +555,36 @@ Point2D doProjection(const Vector3D &point , const double d){
     return Point2D(x_1 , y_1);
 }
 
+void getLinePointIndex(Face &face, Figure* &f, Lines2D &lines){
+    int b_index , e_index;
+    for (int i = 0; i < face.point_indexes.size(); ++i) {
+        if (i == face.point_indexes.size() - 1) {
+            b_index = face.point_indexes.at(i);
+            e_index = face.point_indexes.at(0);
+        }
+        else {
+            b_index = face.point_indexes.at(i);
+            e_index = face.point_indexes.at(i + 1);
+        }
+        // Get points
+        Vector3D beginP = f->points[b_index];
+        Vector3D endP = f->points[e_index];
+        // Convert Vector3D to Point2D
+        Point2D newBeginP = doProjection(beginP, 1.0);
+        Point2D newEndP = doProjection(endP, 1.0);
+        // Create new line
+        Line2D newLine(newBeginP, newEndP, f->color);
+        // Push line back to vector
+        lines.push_back(newLine);
+    }
+}
+
 Lines2D doProjection(const Figures3D &figs){
     Lines2D lines;
     for(Figure *f : figs){
         for(Face face : f->faces){
-            // Get points index
-            int b_index = face.point_indexes.at(0);
-            int e_index = face.point_indexes.at(1);
-            // Get points
-            Vector3D beginP = f->points[b_index];
-            Vector3D endP = f->points[e_index];
-            // Convert Vector3D to Point2D
-            Point2D newBeginP = doProjection(beginP,1.0);
-            Point2D newEndP = doProjection(endP,1.0);
-            // Create new line
-            Line2D newLine(newBeginP , newEndP , f->color);
-            // Push line back to vector
-            lines.push_back(newLine);
+            // Get points index - loop through
+            getLinePointIndex(face, f, lines);
         }
     }
     return lines;
@@ -579,12 +592,12 @@ Lines2D doProjection(const Figures3D &figs){
 
 // Session 3: Figures - Platonic bodies
 
-Figure createCube( vector<double>&lineColor , Matrix &m ){
+Figure createCube( vector<double>&lineColor){
     // Points array
     double Points_T [3][8] = {
             { 1 , -1 , 1 , -1 , 1 , -1 , 1 , -1 },
             { -1 , 1 , 1 , -1 , 1 , -1 , -1 , 1 },
-            { -1, -1 , 1 , 1 , -1 , -1 , 1 , 1 }
+            {-1 , -1 , 1 , 1 , -1 , -1 , 1 , 1  }
     };
     // Faces array
     int Faces_T [4][6] = {
@@ -605,8 +618,6 @@ Figure createCube( vector<double>&lineColor , Matrix &m ){
     }
     // Create new figure
     Figure newCube( points , faces , Color( lineColor.at(0) , lineColor.at(1) , lineColor.at(2) ) );
-    // Apply transformation
-    newCube.applyTransformation(m);
     return newCube;
 }
 
@@ -826,19 +837,37 @@ Figures3D drawWireframe(int &size , vector<double> &eye , vector<double> &backgr
         // Get figure type
         string figure_type = configuration["Figure"+to_string(i)]["type"].as_string_or_die();
         // Get common attributes
+        double scale = configuration["Figure"+to_string(i)]["scale"].as_double_or_default(1.0);
+        double rotX = configuration["Figure"+to_string(i)]["rotateX"].as_double_or_default(0);
+        double rotY = configuration["Figure"+to_string(i)]["rotateY"].as_double_or_default(0);
+        double rotZ = configuration["Figure"+to_string(i)]["rotateZ"].as_double_or_default(0);
+        vector<double> center = configuration["Figure"+to_string(i)]["center"].as_double_tuple_or_default({0,0,0});
+        vector<double> lineColor = configuration["Figure"+to_string(i)]["color"].as_double_tuple_or_default({0,0,0});
+        // Figure_type : "LineDrawing"
         if (figure_type == "LineDrawing"){
-            double scale = configuration["Figure"+to_string(i)]["scale"].as_double_or_default(1.0);
-            double rotX = configuration["Figure"+to_string(i)]["rotateX"].as_double_or_default(0);
-            double rotY = configuration["Figure"+to_string(i)]["rotateY"].as_double_or_default(0);
-            double rotZ = configuration["Figure"+to_string(i)]["rotateZ"].as_double_or_default(0);
-            vector<double> center = configuration["Figure"+to_string(i)]["center"].as_double_tuple_or_default({0,0,0});
-            vector<double> lineColor = configuration["Figure"+to_string(i)]["color"].as_double_tuple_or_default({0,0,0});
+            // Get attributes specific for LineDrawing
             int nrPoints = configuration["Figure"+to_string(i)]["nrPoints"].as_int_or_die();
             int nrLines = configuration["Figure"+to_string(i)]["nrLines"].as_int_or_die();
-
-            // Add figure to vector of figures
+            // Create new LineDrawing figure
             Figure* newFigure = drawLineDrawing(scale , rotX , rotY , rotZ , nrPoints , nrLines , configuration ,
                                                lineColor , center , m_eye , i);
+            // Add figure to vector of figures
+            figures.push_back(newFigure);
+        }
+        // Figure_type : "Cube"
+        else if (figure_type == "Cube"){
+            // Standard matrix operations
+            Matrix m = scaleFigure(scale);
+            m *= rotateX((rotX * M_PI) / 180);
+            m *= rotateY((rotY * M_PI) / 180);
+            m *= rotateZ((rotZ * M_PI) / 180);
+            m *= translate(Vector3D::point(center.at(0) , center.at(1) , center.at(2)));
+            m *= m_eye;
+            // Create new figure
+            Figure* newFigure;
+            newFigure = new Figure(createCube(lineColor));
+            // Apply transformation
+            newFigure->applyTransformation(m);
             figures.push_back(newFigure);
         }
 
@@ -863,14 +892,14 @@ img::EasyImage generate_image(const ini::Configuration &configuration)
         input_stream.close();
         return draw2DLines( drawSystem(l_system , size , backgroundColor , lineColor ) , size , backgroundColor );
     }
-
+    // Case: type == "Wireframe"
     else if (type == "Wireframe"){
         // Get general properties
         int size = configuration["General"]["size"].as_int_or_die();
         vector<double> eye = configuration["General"]["eye"].as_double_tuple_or_die();
         vector<double> backgroundcolor = configuration["General"]["backgroundcolor"].as_double_tuple_or_die();
         int nrFigures = configuration["General"]["nrFigures"].as_int_or_die();
-
+        // Draw the wireframe
         return draw2DLines(doProjection(drawWireframe(size , eye , backgroundcolor , nrFigures , configuration)) ,
                 size , backgroundcolor);
 
