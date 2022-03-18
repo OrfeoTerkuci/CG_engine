@@ -10,6 +10,7 @@
 #include <stdexcept>
 #include <string>
 #include <list>
+#include <algorithm>
 // For VS Code
 /*
 #ifndef M_PI
@@ -554,7 +555,7 @@ Point2D doProjection(const Vector3D &point , const double d){
     return Point2D(x_1 , y_1);
 }
 
-void getLinePointIndex(Face &face, Figure *&f, Lines2D &lines){
+void getLinePointIndex(Face &face, Figure* &f, Lines2D &lines){
     // Create new variables
     int b_index = 0;
     int e_index = 0;
@@ -570,19 +571,28 @@ void getLinePointIndex(Face &face, Figure *&f, Lines2D &lines){
         Point2D newEndP = doProjection(endP, 1.0);
         // Create new line
         Line2D newLine(newBeginP, newEndP, f->color);
-        // Push line back to vector
         lines.push_back(newLine);
     }
 }
 
 Lines2D doProjection(Figures3D &figs){
     Lines2D lines;
-    for(Figure *f : figs){
+    for(Figure* f : figs){
         for(Face face : f->faces){
             // Get points index - loop through
             getLinePointIndex(face, f, lines);
         }
     }
+    // Check for duplicates
+    /*
+    for (Line2D l : lines){
+        for (unsigned long i = 0 ; i < lines.size(); i++){
+            if(l.p1.x == lines.at(i).p1.x && l.p1.y == lines.at(i).p1.y && l.p2.x == lines.at(i).p2.x && l.p2.y == lines.at(i).p2.y){
+                lines.erase(lines.begin() + i);
+            }
+        }
+    }
+    */
     return lines;
 }
 
