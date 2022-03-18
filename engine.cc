@@ -5,7 +5,6 @@
 #include "l_parser/l_parser.h"
 #include "vector/vector3d.h"
 #include <fstream>
-#define _USE_MATH_DEFINES
 #include <cmath>
 #include <iostream>
 #include <stdexcept>
@@ -327,7 +326,7 @@ img::EasyImage draw2DLines (const Lines2D &lines , const int size , vector<doubl
     // Calculate range along the x-axis and y-axis
     double x_range = x_max - x_min;
     double y_range = y_max - y_min;
-    // Calculate image dimentions
+    // Calculate image dimensions
     double imageWidth   = size * (x_range / max(x_range,y_range));
     double imageHeight  = size * (y_range / max(x_range,y_range));
     // Create the image file
@@ -555,18 +554,14 @@ Point2D doProjection(const Vector3D &point , const double d){
     return Point2D(x_1 , y_1);
 }
 
-void getLinePointIndex(Face &face, Figure* &f, Lines2D &lines){
+void getLinePointIndex(Face &face, Figure *&f, Lines2D &lines){
+    // Create new variables
     int b_index = 0;
     int e_index = 0;
-    for (int i = 0; i < face.point_indexes.size(); ++i) {
-        if (i == face.point_indexes.size() - 1) {
-            b_index = face.point_indexes.at(i);
-            e_index = face.point_indexes.at(0);
-        }
-        else {
-            b_index = face.point_indexes.at(i);
-            e_index = face.point_indexes.at(i + 1);
-        }
+    for (unsigned long i = 0; i < face.point_indexes.size(); ++i) {
+        // Get begin and end index
+        b_index = face.point_indexes.at(i);
+        e_index = face.point_indexes.at(i == face.point_indexes.size() - 1 ? 0 : i + 1);
         // Get points
         Vector3D beginP = f->points[b_index];
         Vector3D endP = f->points[e_index];
@@ -593,7 +588,7 @@ Lines2D doProjection(Figures3D &figs){
 
 // Session 3: Figures - Platonic bodies
 
-Figure createCube( vector<double>&lineColor){
+Figure* createCube(vector<double>&lineColor , Matrix &m){
     // Points array
     double Points_T [3][8] = {
             { 1 , -1 , 1 , -1 , 1 , -1 , 1 , -1 },
@@ -615,10 +610,12 @@ Figure createCube( vector<double>&lineColor){
     // Create all the faces
     vector<Face> faces;
     for (int j = 0; j < 6; ++j) {
-        faces.push_back( Face( { Faces_T[0][j] , Faces_T[1][j] , Faces_T[2][j] , Faces_T[3][j] } ) );
+        faces.push_back( Face( {Faces_T[0][j] , Faces_T[1][j] , Faces_T[2][j] , Faces_T[3][j]} ) );
     }
     // Create new figure
-    Figure newCube( points , faces , Color( lineColor.at(0) , lineColor.at(1) , lineColor.at(2) ) );
+    Figure* newCube;
+    newCube = new Figure( points , faces , Color( lineColor.at(0) , lineColor.at(1) , lineColor.at(2) ) );
+    newCube->applyTransformation(m);
     return newCube;
 }
 
@@ -785,10 +782,6 @@ Figure createTorus(){
 
 }
 
-Figure drawFigure(string &figureType , const ini::Configuration &configuration){
-
-}
-
 Figure* drawLineDrawing(double &scale , double &rotX , double &rotY , double &rotZ , int &nrPoints , int &nrLines ,
                        const ini::Configuration &configuration , vector<double> &lineColor , vector<double> &center ,
                        Matrix &m_eye , int &i){
@@ -823,7 +816,8 @@ Figure* drawLineDrawing(double &scale , double &rotX , double &rotY , double &ro
     return newFigure;
 }
 
-Figures3D drawWireframe(int &size , vector<double> &eye , vector<double> &backgroundcolor , int &nrFigures , const ini::Configuration &configuration ){
+Figures3D drawWireframe(int &size , vector<double> &eye , vector<double> &backgroundcolor , int &nrFigures ,
+        const ini::Configuration &configuration ){
     // Make the variables
     double theta;
     double phi;
@@ -844,6 +838,7 @@ Figures3D drawWireframe(int &size , vector<double> &eye , vector<double> &backgr
         double rotZ = configuration["Figure"+to_string(i)]["rotateZ"].as_double_or_default(0);
         vector<double> center = configuration["Figure"+to_string(i)]["center"].as_double_tuple_or_default({0,0,0});
         vector<double> lineColor = configuration["Figure"+to_string(i)]["color"].as_double_tuple_or_default({0,0,0});
+
         // Figure_type : "LineDrawing"
         if (figure_type == "LineDrawing"){
             // Get attributes specific for LineDrawing
@@ -857,18 +852,16 @@ Figures3D drawWireframe(int &size , vector<double> &eye , vector<double> &backgr
         }
         // Figure_type : "Cube"
         else if (figure_type == "Cube"){
+            // Create new figure
+            Figure* newFigure;
             // Standard matrix operations
             Matrix m = scaleFigure(scale);
             m *= rotateX((rotX * M_PI) / 180);
             m *= rotateY((rotY * M_PI) / 180);
             m *= rotateZ((rotZ * M_PI) / 180);
-            m *= translate(Vector3D::point(center.at(0) , center.at(1) , center.at(2)));
+            m *= translate( Vector3D::point( center.at(0) , center.at(1) , center.at(2) ) );
             m *= m_eye;
-            // Create new figure
-            Figure* newFigure;
-            newFigure = new Figure(createCube(lineColor));
-            // Apply transformation
-            newFigure->applyTransformation(m);
+            newFigure = createCube(lineColor , m);
             figures.push_back(newFigure);
         }
 
