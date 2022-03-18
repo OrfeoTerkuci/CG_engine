@@ -598,7 +598,7 @@ Lines2D doProjection(Figures3D &figs){
 
 // Session 3: Figures - Platonic bodies
 
-Figure* createCube(vector<double>&lineColor , Matrix &m){
+Figure* createCube(vector<double>&lineColor){
     // Points array
     double Points_T [3][8] = {
             { 1 , -1 , 1 , -1 , 1 , -1 , 1 , -1 },
@@ -607,10 +607,10 @@ Figure* createCube(vector<double>&lineColor , Matrix &m){
     };
     // Faces array
     int Faces_T [4][6] = {
-            { 1 , 5 , 2 , 6 , 7 , 1 },
-            { 5 , 2 , 6 , 1 , 3 , 6 },
-            { 3 , 8 , 4 , 7 , 8 , 2 },
-            { 7 , 3 , 8 , 4 , 4 , 5 }
+            { 0 , 4 , 1 , 5 , 6 , 0 },
+            { 4 , 1 , 5 , 0 , 2 , 5 },
+            { 2 , 7 , 3 , 6 , 7 , 1 },
+            { 6 , 2 , 7 , 3 , 3 , 4 }
     };
     // Create all the points
     vector<Vector3D> points;
@@ -625,11 +625,10 @@ Figure* createCube(vector<double>&lineColor , Matrix &m){
     // Create new figure
     Figure* newCube;
     newCube = new Figure( points , faces , Color( lineColor.at(0) , lineColor.at(1) , lineColor.at(2) ) );
-    newCube->applyTransformation(m);
     return newCube;
 }
 
-Figure createTetrahedron( vector<double>&lineColor , Matrix &m ){
+Figure* createTetrahedron( vector<double>&lineColor){
     // Points array
     double Points_T [3][4] = {
             { 1 , -1 , 1 , -1 },
@@ -638,9 +637,9 @@ Figure createTetrahedron( vector<double>&lineColor , Matrix &m ){
     };
     // Faces array
     int Faces_T [3][4] = {
-            { 1 , 2 , 1 , 1 },
-            { 2 , 4 , 4 , 3 },
-            { 3 , 3 , 2 , 4 }
+            { 0 , 2 , 0 , 0 },
+            { 1 , 3 , 3 , 2 },
+            { 2 , 2 , 1 , 3 }
     };
     // Create all the points
     vector<Vector3D> points;
@@ -653,24 +652,23 @@ Figure createTetrahedron( vector<double>&lineColor , Matrix &m ){
         faces.push_back( Face( { Faces_T[0][j] , Faces_T[1][j] , Faces_T[2][j] } ) );
     }
     // Create new figure
-    Figure newTetra( points , faces , Color( lineColor.at(0) , lineColor.at(1) , lineColor.at(2) ) );
-    // Apply transformation
-    newTetra.applyTransformation(m);
+    Figure* newTetra;
+    newTetra = new Figure( points , faces , Color( lineColor.at(0) , lineColor.at(1) , lineColor.at(2) ) );
     return newTetra;
 }
 
-Figure createOctahedron( vector<double>&lineColor , Matrix &m ){
+Figure* createOctahedron( vector<double>&lineColor){
     // Points array
     double Points_T [3][6] = {
             { 1 , 0 ,-1 , 0 , 0 , 0 },
             { 0 , 1 , 0 , -1 , 0 , 0 },
-            { 0 , 0 , 0 , 0 , -1 , -1 }
+            { 0 , 0 , 0 , 0 , -1 , 1 }
     };
     // Faces array
     int Faces_T [3][8] = {
-            { 1 , 2 , 3 , 4 , 2 , 3 , 4 , 1},
-            { 2 , 3 , 4 , 1 , 1 , 2 , 3 , 4},
-            { 6 , 6 , 6 , 6 , 5 , 5 , 5 , 5}
+            { 0 , 1 , 2 , 3 , 1 , 2 , 3 , 0},
+            { 1 , 2 , 3 , 0 , 0 , 1 , 2 , 3},
+            { 5 , 5 , 5 , 5 , 4 , 4 , 4 , 4}
     };
     // Create all the points
     vector<Vector3D> points;
@@ -683,40 +681,39 @@ Figure createOctahedron( vector<double>&lineColor , Matrix &m ){
         faces.push_back( Face( { Faces_T[0][j] , Faces_T[1][j] , Faces_T[2][j] } ) );
     }
     // Create new figure
-    Figure newOcta( points , faces , Color( lineColor.at(0) , lineColor.at(1) , lineColor.at(2) ) );
-    // Apply transformation
-    newOcta.applyTransformation(m);
+    Figure* newOcta;
+    newOcta = new Figure( points , faces , Color( lineColor.at(0) , lineColor.at(1) , lineColor.at(2) ) );
     return newOcta;
 }
 
-Figure createIcosahedron( vector<double>&lineColor , Matrix &m ){
+Figure* createIcosahedron( vector<double>&lineColor){
     // Points array
     double Points_T [3][12];
     Points_T[0][0] = 0;
     Points_T[1][0] = 0;
-    Points_T[2][0] = sqrt( 5 / 2 );
+    Points_T[2][0] = sqrt(5) / 2;
 
     for (int k = 1; k < 6; ++k) {
-        Points_T[0][k] = cos( ( 2 * M_PI * ( k - 2 ) ) / 5 );
-        Points_T[1][k] = sin( ( 2 * M_PI * ( k - 2 ) ) / 5 );
+        Points_T[0][k] = cos(2 * M_PI * (k - 1) / 5 );
+        Points_T[1][k] = sin(2 * M_PI * (k - 1) / 5 );
         Points_T[2][k] = 0.5;
     }
 
     for (int l = 6; l < 11; ++l) {
-        Points_T[0][l] = cos( ( M_PI / 5 ) + ( ( l - 7 ) * ( 2 * M_PI ) ) / 5 );
-        Points_T[1][l] = sin( ( M_PI / 5 ) + ( ( l - 7 ) * ( 2 * M_PI ) ) / 5 );
+        Points_T[0][l] = cos(M_PI / 5 + (l - 6) * (2 * M_PI) / 5);
+        Points_T[1][l] = sin(M_PI / 5 + (l - 6) * (2 * M_PI) / 5) ;
         Points_T[2][l] = -0.5;
     }
 
     Points_T[0][11] = 0;
     Points_T[1][11] = 0;
-    Points_T[2][11] = -sqrt( 5 / 2 );
+    Points_T[2][11] = -sqrt(5) / 2;
 
     // Faces array
     int Faces_T [3][20] = {
-            { 1 , 1 , 1 , 1 , 1 , 2 , 3 , 3 , 4 , 4 , 5 , 5 , 6 , 6 , 2 , 12 , 12 , 12 , 12 , 12 },
-            { 2 , 3 , 4 , 5 , 6 , 7 , 7 , 8 , 8 , 9 , 9 , 10 , 10 , 11 , 11 , 8 , 9 , 10 , 11 , 7 },
-            { 3 , 4 , 5 , 6 , 2 , 3 , 8 , 4 , 9 , 5 , 10 , 6 , 11 , 2 , 7 , 7 , 8 , 9 , 10 , 11 }
+            { 0 , 0 , 0 , 0 , 0 , 1 , 2 , 2 , 3 , 3 , 4 , 4 , 5 , 5 , 1 , 11 , 11 , 11 , 11 , 11 },
+            { 1 , 2 , 3 , 4 , 5 , 6 , 6 , 7 , 7 , 8 , 8 , 9 , 9 , 10 , 10 , 7 , 8 , 9 , 10 , 6 },
+            { 2 , 3 , 4 , 5 , 1 , 2 , 7 , 3 , 8 , 4 , 9 , 5 , 10 , 1 , 6 , 6 , 7 , 8 , 9 , 10 }
     };
 
     // Create all the points
@@ -730,65 +727,111 @@ Figure createIcosahedron( vector<double>&lineColor , Matrix &m ){
         faces.push_back( Face( { Faces_T[0][j] , Faces_T[1][j] , Faces_T[2][j] } ) );
     }
     // Create new figure
-    Figure newIso( points , faces , Color( lineColor.at(0) , lineColor.at(1) , lineColor.at(2) ) );
-    // Apply transformation
-    newIso.applyTransformation(m);
+    Figure* newIso;
+    newIso = new Figure( points , faces , Color( lineColor.at(0) , lineColor.at(1) , lineColor.at(2) ) );
     return newIso;
 }
 
-Figure createDodecahedron( vector<double>&lineColor , Matrix &m ){
+Figure* createDodecahedron( vector<double>&lineColor){
     // Points array
-    double Points_T [3][12];
-    // Create isocahedron
-    Figure newISO = createIcosahedron(lineColor , m);
+    double Points_T [3][20];
+    // Faces array
+    int Faces_T [5][12] = {
+            { 0 , 0 , 1 , 2 , 3 , 4 , 19 , 19 , 18 , 17 , 16 , 15 },
+            { 1 , 5 , 7 , 9 , 11 , 13 , 18 , 14 , 12 , 10 , 8 , 6 },
+            { 2 , 6 , 8 , 10 , 12 , 14 , 17 , 13 , 11 , 9 , 7 , 5 },
+            { 3 , 7 , 9 , 11 , 13 , 5 , 16 , 12 , 10 , 8 , 6 , 14 },
+            { 4 , 1 , 2 , 3 , 4 , 0 , 15 , 18 , 17 , 16 , 15 , 19 }
+    };
+    // Create dodecahedron
+    Figure* newISO = createIcosahedron(lineColor);
     int count = 0;
-    for (Face f : newISO.faces){
+    for (Face f : newISO->faces){
         Vector3D p4 = Vector3D::point(0 , 0 , 0);
-        for (int i = 0; i < 3; ++i) {
-            p4 += newISO.points.at(f.point_indexes.at(i));
-        }
+        p4 += newISO->points.at(f.point_indexes.at(0));
+        p4 += newISO->points.at(f.point_indexes.at(1));
+        p4 += newISO->points.at(f.point_indexes.at(2));
+        p4 /= 3;
         Points_T[0][count] = p4.x;
         Points_T[1][count] = p4.y;
         Points_T[2][count] = p4.z;
+        count++;
     }
-    // Faces array
-    int Faces_T [5][12] = {
-            { 1 , 1 , 2 , 3 , 4 , 5 , 20 , 20 , 19 , 18 , 17 , 16 },
-            { 2 , 6 , 8 , 10 , 12 , 14 , 19 , 15 , 13 , 11 , 9 , 7 },
-            { 3 , 7 , 9 , 11 , 13 , 15 , 18 , 14 , 12 , 10 , 8 , 6 },
-            { 4 , 8 , 10 , 12 , 14 , 6 , 17 , 13 , 11 , 9 , 7 , 15 },
-            { 5 , 2 , 3 , 4 , 5 , 1 , 16 , 19 , 18 , 17 , 16 , 20 }
-    };
     // Create all the points
     vector<Vector3D> points;
-    for (int i = 0; i < 12; ++i) {
+    for (int i = 0; i < 20; ++i) {
         points.push_back(Vector3D::point(Points_T[0][i] , Points_T[1][i] , Points_T[2][i] ) );
     }
     // Create faces
     vector<Face> faces;
-    for (int j = 0; j < 20; ++j) {
-        faces.push_back( Face( { Faces_T[0][j] , Faces_T[1][j] , Faces_T[2][j] } ) );
+    for (int j = 0; j < 12; ++j) {
+        faces.push_back( Face( { Faces_T[0][j] , Faces_T[1][j] , Faces_T[2][j] , Faces_T[3][j] , Faces_T[4][j] } ) );
     }
     // Create new figure
-    Figure newDodeca( points , faces , Color( lineColor.at(0) , lineColor.at(1) , lineColor.at(2) ) );
-    // Apply transformation
-    newDodeca.applyTransformation(m);
+    Figure* newDodeca;
+    newDodeca = new Figure( points , faces , Color( lineColor.at(0) , lineColor.at(1) , lineColor.at(2) ) );
     return newDodeca;
 }
 
-Figure createCylinder(){
+Figure* createSphere(const double radius , const int n){
 
 }
 
-Figure createCone(){
-
+Figure* createCone(vector<double> &lineColor , const int &n , const double &height){
+    // Create points
+    vector<Vector3D> points;
+    for (int i = 0; i < n + 1; ++i) {
+        if (i == n){
+            points.push_back( Vector3D::point(0 , 0 , height) );
+        }
+        else{
+            points.push_back ( Vector3D::point(cos( (2 * i * M_PI) / n ) , sin( (2 * i * M_PI) / n ) , 0) );
+        }
+    }
+    // Get indexes vector
+    vector<int> indexes;
+    for (int i = n - 1; i >= 0; --i) {
+        indexes.push_back(i);
+    }
+    // Create faces
+    vector<Face> faces;
+    for (int j = 0; j < n + 1; ++j) {
+        if (j == n){
+            faces.emplace_back(Face(indexes));
+        }
+        else{
+            faces.push_back( Face( { j , (j+1) % n , n } ) );
+        }
+    }
+    // Create new figure
+    Figure* newCone;
+    newCone = new Figure(points , faces , Color( lineColor.at(0) , lineColor.at(1) , lineColor.at(2) ) );
+    return newCone;
 }
 
-Figure createSphere(){
-
+Figure* createCylinder(vector<double> &lineColor , const int &n , const double &height){
+    // Create points
+    vector<Vector3D> points;
+    // Add points of bottom face
+    for (int i = 0; i < n; ++i) {
+        points.push_back ( Vector3D::point(cos( (2 * i * M_PI) / n ) , sin( (2 * i * M_PI) / n ) , 0) );
+    }
+    // Add points of top face
+    for (int i = n; i < 2 * n; ++i) {
+        points.push_back ( Vector3D::point(cos( (2 * i * M_PI) / n ) , sin( (2 * i * M_PI) / n ) , height) );
+    }
+    // Create faces
+    vector<Face> faces;
+    for (int j = 0; j < n; ++j) {
+        faces.push_back( Face( { j ,  (j+1) % n , (j+n+1) % n , j+n } ) );
+    }
+    // Make new figure
+    Figure* newFigure;
+    newFigure = new Figure(points , faces , Color(lineColor.at(0) , lineColor.at(1) , lineColor.at(2) ) );
+    return newFigure;
 }
 
-Figure createTorus(){
+Figure* createTorus(){
 
 }
 
@@ -811,7 +854,7 @@ Figure* drawLineDrawing(double &scale , double &rotX , double &rotY , double &ro
     // Get lines
     for (int j = 0; j < nrLines; j++){
         line_to_add = configuration["Figure"+to_string(i)]["line"+to_string(j)].as_int_tuple_or_die();
-        faces.push_back(Face({line_to_add.at(0) , line_to_add.at(1)}));
+        faces.push_back(Face( {line_to_add.at(0) , line_to_add.at(1)} ));
     }
     // Create new figure
     Figure* newFigure;
@@ -849,6 +892,13 @@ Figures3D drawWireframe(int &size , vector<double> &eye , vector<double> &backgr
         vector<double> center = configuration["Figure"+to_string(i)]["center"].as_double_tuple_or_default({0,0,0});
         vector<double> lineColor = configuration["Figure"+to_string(i)]["color"].as_double_tuple_or_default({0,0,0});
 
+        Matrix m = scaleFigure(scale);
+        m *= rotateX((rotX * M_PI) / 180);
+        m *= rotateY((rotY * M_PI) / 180);
+        m *= rotateZ((rotZ * M_PI) / 180);
+        m *= translate( Vector3D::point( center.at(0) , center.at(1) , center.at(2) ) );
+        m *= m_eye;
+
         // Figure_type : "LineDrawing"
         if (figure_type == "LineDrawing"){
             // Get attributes specific for LineDrawing
@@ -864,14 +914,58 @@ Figures3D drawWireframe(int &size , vector<double> &eye , vector<double> &backgr
         else if (figure_type == "Cube"){
             // Create new figure
             Figure* newFigure;
-            // Standard matrix operations
-            Matrix m = scaleFigure(scale);
-            m *= rotateX((rotX * M_PI) / 180);
-            m *= rotateY((rotY * M_PI) / 180);
-            m *= rotateZ((rotZ * M_PI) / 180);
-            m *= translate( Vector3D::point( center.at(0) , center.at(1) , center.at(2) ) );
-            m *= m_eye;
-            newFigure = createCube(lineColor , m);
+            newFigure = createCube(lineColor);
+            newFigure->applyTransformation(m);
+            figures.push_back(newFigure);
+        }
+        // Figure_type == "Tetrahedron"
+        else if (figure_type == "Tetrahedron"){
+            // Create new figure
+            Figure* newFigure;
+            newFigure = createTetrahedron(lineColor);
+            newFigure->applyTransformation(m);
+            figures.push_back(newFigure);
+        }
+        // Figure_type == "Octahedron"
+        else if (figure_type == "Octahedron"){
+            // Create new figure
+            Figure* newFigure;
+            newFigure = createOctahedron(lineColor);
+            newFigure->applyTransformation(m);
+            figures.push_back(newFigure);
+        }
+        // Figure_type == "Icosahedron"
+        else if (figure_type == "Icosahedron"){
+            // Create new figure
+            Figure* newFigure;
+            newFigure = createIcosahedron(lineColor);
+            newFigure->applyTransformation(m);
+            figures.push_back(newFigure);
+        }
+        // Figure_type == "Dodecahedron"
+        else if (figure_type == "Dodecahedron"){
+            // Create new figure
+            Figure* newFigure;
+            newFigure = createDodecahedron(lineColor);
+            newFigure->applyTransformation(m);
+            figures.push_back(newFigure);
+        }
+        // Figure_type == "Cone"
+        else if (figure_type == "Cone"){
+            int n = configuration["Figure"+to_string(i)]["n"].as_int_or_die();
+            double height = configuration["Figure"+to_string(i)]["height"].as_double_or_die();
+            Figure* newFigure;
+            newFigure = createCone(lineColor , n , height);
+            newFigure->applyTransformation(m);
+            figures.push_back(newFigure);
+        }
+        // Figure_type == "Cylinder"
+        else if (figure_type == "Cylinder"){
+            const int n = configuration["Figure"+to_string(i)]["n"].as_int_or_die();
+            const double height = configuration["Figure" + to_string(i)]["height"].as_double_or_die();
+            Figure* newFigure;
+            newFigure = createCylinder(lineColor , n , height);
+            newFigure->applyTransformation(m);
             figures.push_back(newFigure);
         }
 
