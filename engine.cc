@@ -437,7 +437,8 @@ Lines2D createSystemLines (const LParser::LSystem2D &l_system , Lines2D &lines ,
     return lines;
 }
 
-Lines2D drawSystem (const LParser::LSystem2D &l_system , const int &size , vector<double> &backgroundColor , vector<double> &lineColor) {
+Lines2D drawSystem2D(const LParser::LSystem2D &l_system, const int &size, vector<double> &backgroundColor,
+                     vector<double> &lineColor) {
     // Create the list of lines
     Lines2D lines;
 
@@ -809,8 +810,9 @@ Figure* createSphere(const double &radius , const int &n , vector<double>&lineCo
     vector<Face>newFaces;
 
     for (int i = 0; i < n; ++i) {
+
         // Split each triangle into 4
-        for (Face &f : newIcoSphere->faces){
+        for (Face f : newIcoSphere->faces){
             splitTriangle( f , newIcoSphere , newFaces);
         }
         // Update the faces vector
@@ -886,9 +888,86 @@ Figure* createCylinder(vector<double> &lineColor , const int &n , const double &
     return newFigure;
 }
 
-Figure* createTorus(){
+Figure* createTorus(const double &r , const double &R , const int &n , const int &m , vector<double> &lineColor){
+    // Create points vector
+    vector<Vector3D> points;
+    // Create all the points
+    for (unsigned int i = 0; i < n; ++i) {
+        for (unsigned int j = 0; j < m; ++j) {
+            // Calculate modifiers u and v
+            double u = (2 * i * M_PI) / n;
+            double v = (2 * j * M_PI) / m;
+            // Calculate the coordinates of the new point
+            double x_uv = ( R + r * cos(v) ) * cos(u);
+            double y_uv = ( R + r * cos(v) ) * sin(u);
+            double z_uv = r * sin(v);
 
+            points.push_back( Vector3D::point( x_uv , y_uv , z_uv ) );
+        }
+    }
+    // Create faces vector
+    vector<Face> faces;
+    for (unsigned int i = 0; i < n; ++i) {
+        for (unsigned int j = 0; j < m; ++j) {
+            int ind1 = i * n + j;
+            int ind2 = ( (i + 1) % n ) * n + j;
+            int ind3 = ( (i + 1) % n ) * n + (j + 1) % m;
+            int ind4 = i * n + (j + 1) % m;
+            faces.push_back( Face( { ind1 , ind2 , ind3 , ind4 } ) );
+        }
+    }
+    // Create new figure
+    Figure* newFigure;
+    newFigure = new Figure( points , faces , Color( lineColor.at(0) , lineColor.at(1) , lineColor.at(2) ) );
+    return newFigure;
 }
+
+string getEndString3D(const LParser::LSystem3D &l_system , string &startingString , string &endingString){
+    // Replace symbols
+    for(char c : startingString){
+        // Add the operators
+        if(c == '-' || c == '+' || c == '(' || c == ')' || c == '^' || c == '&' || c == '/' || c == '\\' || c == '|'){
+            endingString += c;
+        }
+            // Replace the string
+        else{
+            endingString += l_system.get_replacement(c);
+        }
+    }
+    // Update startingString
+    startingString = endingString;
+    endingString = "";
+    return startingString;
+}
+
+Lines2D drawSystem3D(const LParser::LSystem3D &l_system, const int &size, vector<double> &backgroundColor,
+                     vector<double> &lineColor) {
+    // Create the list of lines
+    Lines2D lines;
+
+    // Get all the components of the LSystem3D
+    const auto &Alphabet = l_system.get_alphabet();
+    const string &initiator = l_system.get_initiator();
+    double angle = l_system.get_angle();
+    double startingAngle = 0.0;
+
+    // Convert angles to radians
+    angle = ( angle * M_PI ) / 180;
+
+    // Get iterations
+    unsigned int nr_iterations = l_system.get_nr_iterations();
+
+    // Get initiating string
+    string startingString = l_system.get_initiator();
+    string endingString;
+    // Replace symbols
+    for( int i = 0; i < nr_iterations; i++){
+        //startingString = getEndString(l_system, startingString, endingString);
+    }
+    Point2D currentPoint(0,0);
+    //return createSystemLines(l_system,lines,startingString,endingString,startingAngle,angle,lineColor,currentPoint,0);
+}
+
 
 Figure* drawLineDrawing(double &scale , double &rotX , double &rotY , double &rotZ , int &nrPoints , int &nrLines ,
                        const ini::Configuration &configuration , vector<double> &lineColor , vector<double> &center ,
@@ -1031,6 +1110,17 @@ Figures3D drawWireframe(int &size , vector<double> &eye , vector<double> &backgr
             newFigure->applyTransformation(m);
             figures.push_back(newFigure);
         }
+        // Figure_type == "Torus"
+        else if (figure_type == "Torus"){
+            double _R = configuration["Figure"+to_string(i)]["R"].as_double_or_die();
+            double _r = configuration["Figure"+to_string(i)]["r"].as_double_or_die();
+            int _n = configuration["Figure"+to_string(i)]["n"].as_int_or_die();
+            int _m = configuration["Figure"+to_string(i)]["m"].as_int_or_die();
+            Figure* newFigure;
+            newFigure = createTorus( _r , _R , _n , _m , lineColor);
+            newFigure->applyTransformation(m);
+            figures.push_back(newFigure);
+        }
 
     }
     return figures;
@@ -1051,7 +1141,7 @@ img::EasyImage generate_image(const ini::Configuration &configuration)
         ifstream input_stream(input_filename);
         input_stream >> l_system;
         input_stream.close();
-        return draw2DLines( drawSystem(l_system , size , backgroundColor , lineColor ) , size , backgroundColor );
+        return draw2DLines(drawSystem2D(l_system, size, backgroundColor, lineColor) , size , backgroundColor );
     }
     // Case: type == "Wireframe"
     else if (type == "Wireframe"){
