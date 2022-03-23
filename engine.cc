@@ -628,7 +628,7 @@ Figure* createCube(vector<double>&lineColor){
     return newCube;
 }
 
-Figure* createTetrahedron( vector<double>&lineColor){
+Figure* createTetrahedron(vector<double>&lineColor){
     // Points array
     double Points_T [3][4] = {
             { 1 , -1 , 1 , -1 },
@@ -657,7 +657,7 @@ Figure* createTetrahedron( vector<double>&lineColor){
     return newTetra;
 }
 
-Figure* createOctahedron( vector<double>&lineColor){
+Figure* createOctahedron(vector<double>&lineColor){
     // Points array
     double Points_T [3][6] = {
             { 1 , 0 ,-1 , 0 , 0 , 0 },
@@ -686,7 +686,7 @@ Figure* createOctahedron( vector<double>&lineColor){
     return newOcta;
 }
 
-Figure* createIcosahedron( vector<double>&lineColor){
+Figure* createIcosahedron(vector<double>&lineColor){
     // Points array
     double Points_T [3][12];
     Points_T[0][0] = 0;
@@ -732,7 +732,7 @@ Figure* createIcosahedron( vector<double>&lineColor){
     return newIso;
 }
 
-Figure* createDodecahedron( vector<double>&lineColor){
+Figure* createDodecahedron(vector<double>&lineColor){
     // Points array
     double Points_T [3][20];
     // Faces array
@@ -744,13 +744,13 @@ Figure* createDodecahedron( vector<double>&lineColor){
             { 4 , 1 , 2 , 3 , 4 , 0 , 15 , 18 , 17 , 16 , 15 , 19 }
     };
     // Create dodecahedron
-    Figure* newISO = createIcosahedron(lineColor);
+    Figure* newICO = createIcosahedron(lineColor);
     int count = 0;
-    for (Face f : newISO->faces){
+    for (Face f : newICO->faces){
         Vector3D p4 = Vector3D::point(0 , 0 , 0);
-        p4 += newISO->points.at(f.point_indexes.at(0));
-        p4 += newISO->points.at(f.point_indexes.at(1));
-        p4 += newISO->points.at(f.point_indexes.at(2));
+        p4 += newICO->points.at(f.point_indexes.at(0));
+        p4 += newICO->points.at(f.point_indexes.at(1));
+        p4 += newICO->points.at(f.point_indexes.at(2));
         p4 /= 3;
         Points_T[0][count] = p4.x;
         Points_T[1][count] = p4.y;
@@ -773,9 +773,56 @@ Figure* createDodecahedron( vector<double>&lineColor){
     return newDodeca;
 }
 
-Figure* createSphere(const double radius , const int n){
+void splitTriangle(Face &originalTriangle , Figure* &originalFigure , vector<Face> &newFaces){
+    // Get the points of the triangle
+    int index_A = originalTriangle.point_indexes.at(0);
+    int index_B = originalTriangle.point_indexes.at(1);
+    int index_C = originalTriangle.point_indexes.at(2);
+    Vector3D A = originalFigure->points.at(index_A);
+    Vector3D B = originalFigure->points.at(index_B);
+    Vector3D C = originalFigure->points.at(index_C);
+    // Calculate middle points
+    Vector3D D = (A + B) / 2;
+    Vector3D E = (A + C) / 2;
+    Vector3D F = (B + C) / 2;
+    // Push points to figure
+    originalFigure->points.push_back(D);
+    int index_D = static_cast<int>(originalFigure->points.size() - 1);
+    originalFigure->points.push_back(E);
+    int index_E = static_cast<int>(originalFigure->points.size() - 1);
+    originalFigure->points.push_back(F);
+    int index_F = static_cast<int>(originalFigure->points.size() - 1);
 
+    // Replace triangles and add the new triangles
+    //originalTriangle.point_indexes = { index_A , index_D , index_E};
+    newFaces.push_back( Face( {index_A , index_D , index_E} ) );
+    newFaces.push_back( Face( {index_B , index_F , index_D} ) );
+    newFaces.push_back( Face( {index_C , index_E , index_F} ) );
+    newFaces.push_back( Face( {index_D , index_F , index_E} ) );
 
+}
+
+Figure* createSphere(const double &radius , const int &n , vector<double>&lineColor){
+    // Create an icosahedron
+    Figure* newIcoSphere = createIcosahedron(lineColor);
+    // Create temporary faces vector
+    vector<Face>newFaces;
+
+    for (int i = 0; i < n; ++i) {
+        // Split each triangle into 4
+        for (Face &f : newIcoSphere->faces){
+            splitTriangle( f , newIcoSphere , newFaces);
+        }
+        // Update the faces vector
+        newIcoSphere->faces = newFaces;
+        // Reset the temporary vector
+        newFaces = {};
+    }
+    // Rescale all the points
+    for (Vector3D &p : newIcoSphere->points){
+        p.normalise();
+    }
+    return newIcoSphere;
 }
 
 Figure* createCone(vector<double> &lineColor , const int &n , const double &height){
@@ -973,6 +1020,14 @@ Figures3D drawWireframe(int &size , vector<double> &eye , vector<double> &backgr
             const double height = configuration["Figure" + to_string(i)]["height"].as_double_or_die();
             Figure* newFigure;
             newFigure = createCylinder(lineColor , n , height);
+            newFigure->applyTransformation(m);
+            figures.push_back(newFigure);
+        }
+        // Figure_type == "Sphere"
+        else if (figure_type == "Sphere"){
+            const int n = configuration["Figure"+to_string(i)]["n"].as_int_or_die();
+            Figure* newFigure;
+            newFigure = createSphere(1.0 , n , lineColor);
             newFigure->applyTransformation(m);
             figures.push_back(newFigure);
         }
