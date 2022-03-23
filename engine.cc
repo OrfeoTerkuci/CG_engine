@@ -775,6 +775,7 @@ Figure* createDodecahedron( vector<double>&lineColor){
 
 Figure* createSphere(const double radius , const int n){
 
+
 }
 
 Figure* createCone(vector<double> &lineColor , const int &n , const double &height){
@@ -823,7 +824,14 @@ Figure* createCylinder(vector<double> &lineColor , const int &n , const double &
     // Create faces
     vector<Face> faces;
     for (int j = 0; j < n; ++j) {
-        faces.push_back( Face( { j ,  (j+1) % n , (j+n+1) % n , j+n } ) );
+        // Last face loops back to first one
+        if (j == n-1){
+            faces.push_back( Face( { j , 0 , n , j + n  } ) );
+        }
+        // Normal face
+        else{
+            faces.push_back( Face( { j , j+1 , j+n+1 , j + n  } ) );
+        }
     }
     // Make new figure
     Figure* newFigure;
