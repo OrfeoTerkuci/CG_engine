@@ -11,6 +11,8 @@
 #include <string>
 #include <list>
 #include <algorithm>
+#include <utility>
+#include <assert.h>
 // For VS Code
 /*
 #ifndef M_PI
@@ -65,6 +67,9 @@ public:
     Point2D p2;
     Color color;
 
+    double z1;
+    double z2;
+
     Line2D(const Point2D &p1, const Point2D &p2, const Color &color) : p1(p1), p2(p2), color(color) {}
 
     virtual ~Line2D() {
@@ -106,6 +111,12 @@ public:
 
     }
 };
+
+class ZBuffer: public vector< vector<double> > {
+public:
+    ZBuffer( const int width , const int height) {}
+};
+
 
 // Declare new types
 
@@ -570,6 +581,8 @@ void getLinePointIndex(Face &face, Figure* &f, Lines2D &lines){
         Point2D newEndP = doProjection(endP, 1.0);
         // Create new line
         Line2D newLine(newBeginP, newEndP, f->color);
+        newLine.z1 = beginP.z;
+        newLine.z2 = endP.z;
         lines.push_back(newLine);
     }
 }
@@ -1264,6 +1277,73 @@ Figures3D drawWireframe(int &size , vector<double> &eye , vector<double> &backgr
 
     }
     return figures;
+}
+
+// Session 4 : Z-Buffering
+void draw_zbuf_line( ZBuffer &zBuffer, img::EasyImage &image,
+        unsigned int x0, unsigned int y0, const double z0,
+        unsigned int x1, unsigned int y1, const double z1,
+        const Color &lineColor){
+
+    assert( x0 < image.get_width() && y0 < image.get_height() );
+    assert( x1 < image.get_width() && y1 < image.get_height() );
+    if (x0 == x1)
+    {
+        //special case for x0 == x1
+        for (unsigned int i = std::min(y0, y1); i <= std::max(y0, y1); i++)
+        {
+            (image)(x0, i).red = lineColor.red;
+            (image)(x0, i).green = lineColor.green;
+            (image)(x0, i).blue = lineColor.blue;
+        }
+    }
+    else if (y0 == y1)
+    {
+        //special case for y0 == y1
+        for (unsigned int i = std::min(x0, x1); i <= std::max(x0, x1); i++)
+        {
+            (image)(i, y0).red = lineColor.red;
+            (image)(i, y0).green = lineColor.green;
+            (image)(i, y0).blue = lineColor.blue;
+        }
+    }
+    else
+    {
+        if (x0 > x1)
+        {
+            //flip points if x1>x0: we want x0 to have the lowest value
+            swap(x0, x1);
+            swap(y0, y1);
+        }
+        double m = ((double) y1 - (double) y0) / ((double) x1 - (double) x0);
+        if (-1.0 <= m && m <= 1.0)
+        {
+            for (unsigned int i = 0; i <= (x1 - x0); i++)
+            {
+                (image)(x0 + i, (unsigned int) round(y0 + m * i)).red = lineColor.red;
+                (image)(x0 + i, (unsigned int) round(y0 + m * i)).green = lineColor.green;
+                (image)(x0 + i, (unsigned int) round(y0 + m * i)).blue = lineColor.blue;
+            }
+        }
+        else if (m > 1.0)
+        {
+            for (unsigned int i = 0; i <= (y1 - y0); i++)
+            {
+                (image)((unsigned int) round(x0 + (i / m)), y0 + i).red = lineColor.red;
+                (image)((unsigned int) round(x0 + (i / m)), y0 + i).green = lineColor.green;
+                (image)((unsigned int) round(x0 + (i / m)), y0 + i).blue = lineColor.blue;
+            }
+        }
+        else if (m < -1.0)
+        {
+            for (unsigned int i = 0; i <= (y0 - y1); i++)
+            {
+                (image)((unsigned int) round(x0 - (i / m)), y0 - i).red = lineColor.red;
+                (image)((unsigned int) round(x0 - (i / m)), y0 - i).green = lineColor.green;
+                (image)((unsigned int) round(x0 - (i / m)), y0 - i).blue = lineColor.blue;
+            }
+        }
+    }
 }
 
 img::EasyImage generate_image(const ini::Configuration &configuration)
