@@ -407,8 +407,6 @@ Lines2D createSystemLines (const LParser::LSystem2D &l_system , Lines2D &lines ,
             current_x.push_back(currentPoint.x);
             current_y.push_back(currentPoint.y);
             current_angle.push_back(startingAngle);
-            //createSystemLines(l_system,lines,startingString,endingString,startingAngle,angle,lineColor,currentPoint,i+1);
-            //lines = createSystemLines(l_system,lines,startingString,endingString,startingAngle,angle,lineColor,currentPoint.x,currentPoint.y);
         }
         else if (startingString[i] == ')'){
             currentPoint.x = current_x[current_x.size()-1];
@@ -584,16 +582,6 @@ Lines2D doProjection(Figures3D &figs){
             getLinePointIndex(face, f, lines);
         }
     }
-    // Check for duplicates
-    /*
-    for (Line2D l : lines){
-        for (unsigned long i = 0 ; i < lines.size(); i++){
-            if(l.p1.x == lines.at(i).p1.x && l.p1.y == lines.at(i).p1.y && l.p2.x == lines.at(i).p2.x && l.p2.y == lines.at(i).p2.y){
-                lines.erase(lines.begin() + i);
-            }
-        }
-    }
-    */
     return lines;
 }
 
@@ -940,16 +928,156 @@ string getEndString3D(const LParser::LSystem3D &l_system , string &startingStrin
     return startingString;
 }
 
-Lines2D drawSystem3D(const LParser::LSystem3D &l_system, const int &size, vector<double> &backgroundColor,
-                     vector<double> &lineColor) {
-    // Create the list of lines
-    Lines2D lines;
+Figure* createSystemLines3D (const LParser::LSystem3D &l_system , string &startingString,
+        double &angle , vector<double> &lineColor, Vector3D &currentPoint , int current_c){
+    // Create variables to store the current x and y coordinate
+    vector<double> current_x;
+    vector<double> current_y;
+    vector<double> current_z;
+    // Create new figure
+    Figure* newFigure;
+    // Create points and faces vectors
+    vector<Vector3D> points;
+    vector<Face> faces;
+    // Add the origin to the points vector
+    points.push_back( Vector3D::point(currentPoint) );
+    // Create orientation vectors
+    Vector3D H = Vector3D::point( 1 , 0 , 0 );
+    Vector3D L = Vector3D::point( 0 , 1 , 0 );
+    Vector3D U = Vector3D::point( 0 , 0 , 1 );
+    // Create vectors to update the orientations
+    Vector3D H_new = H;
+    Vector3D L_new = L;
+    Vector3D U_new = U;
+    // Create containers for orientation vectors
+    vector<Vector3D> current_H;
+    vector<Vector3D> current_L;
+    vector<Vector3D> current_U;
+    vector<int> current_index;
+    // Loop through characters in initiating string
+    int count = 0;
+    for( int i = current_c; i < startingString.length(); i++) {
+        // Rudder left
+        if (startingString[i] == '+') {
+            // Calculate the new orientations
+            H_new = ( H * cos(angle) + L * sin(angle) );
+            L_new = ( L * cos(angle) - H * sin(angle) );
+            // Update the orientations
+            H = H_new;
+            L = L_new;
+        }
+        // Rudder right
+        else if (startingString[i] == '-') {
+            // Calculate the new orientations
+            H_new = ( H * cos(-angle) + L * sin(-angle) );
+            L_new = ( L * cos(-angle) - H * sin(-angle) );
+            // Update the orientations
+            H = H_new;
+            L = L_new;
+        }
+        // Pitch up
+        else if (startingString[i] == '^') {
+            // Calculate the new orientations
+            H_new = ( H * cos(angle) + U * sin(angle) );
+            U_new = ( U * cos(angle) - H * sin(angle) );
+            // Update the orientations
+            H = H_new;
+            U = U_new;
+        }
+        // Pitch down
+        else if (startingString[i] == '&') {
+            // Calculate the new orientations
+            H_new = ( H * cos(-angle) + U * sin(-angle) );
+            U_new = ( U * cos(-angle) - H * sin(-angle) );
+            // Update the orientations
+            H = H_new;
+            U = U_new;
+        }
+        // Roll left
+        else if (startingString[i] == '\\') {
+            // Calculate the new orientations
+            L_new = ( L * cos(angle) - U * sin(angle) );
+            U_new = ( L * sin(angle) + U * cos(angle) );
+            // Update the orientations
+            L = L_new;
+            U = U_new;
+        }
+        // Roll right
+        else if (startingString[i] == '/') {
+            // Calculate the new orientations
+            L_new = ( L * cos(-angle) - U * sin(-angle) );
+            U_new = ( L * sin(-angle) + U * cos(-angle) );
+            // Update the orientations
+            L = L_new;
+            U = U_new;
+        }
+        // Turn around
+        else if (startingString[i] == '|') {
+            H = -H;
+            L = -L;
+        }
+        else if (startingString[i] == '('){
+            // Save coordinates, draw everything within the bracket, return to saved coordinates
+            current_x.push_back(currentPoint.x);
+            current_y.push_back(currentPoint.y);
+            current_z.push_back(currentPoint.z);
+            current_H.push_back(H);
+            current_L.push_back(L);
+            current_U.push_back(U);
+            current_index.push_back(count);
+        }
+        else if (startingString[i] == ')'){
 
+            currentPoint.x = current_x.back();
+            current_x.pop_back();
+
+            currentPoint.y = current_y.back();
+            current_y.pop_back();
+
+            currentPoint.z = current_z.back();
+            current_z.pop_back();
+
+            H = current_H.back();
+            current_H.pop_back();
+
+            L = current_L.back();
+            current_L.pop_back();
+
+            U = current_U.back();
+            current_U.pop_back();
+
+            count = current_index.back();
+            current_index.pop_back();
+        }
+            // If we must draw
+        else if(l_system.draw(startingString[i])){
+            // Create new points
+            currentPoint += H;
+            Vector3D newPoint = Vector3D::point(currentPoint);
+            points.push_back(newPoint);
+            // Create new faces (the lines)
+            faces.push_back( Face( {count , (int)points.size() - 1} ) );
+            count = (int)points.size() - 1;
+        }
+            // If we mustn't draw
+        else {
+            currentPoint += H;
+            Vector3D newPoint = Vector3D::point(currentPoint);
+            points.push_back(currentPoint);
+        }
+
+    }
+    // Create the new figure
+    newFigure = new Figure(points , faces , Color( lineColor.at(0), lineColor.at(1), lineColor.at(2) ));
+    return newFigure;
+}
+
+Figure* drawSystem3D(const LParser::LSystem3D &l_system, const int &size, vector<double> &backgroundColor,
+                     vector<double> &lineColor) {
     // Get all the components of the LSystem3D
     const auto &Alphabet = l_system.get_alphabet();
     const string &initiator = l_system.get_initiator();
     double angle = l_system.get_angle();
-    double startingAngle = 0.0;
 
     // Convert angles to radians
     angle = ( angle * M_PI ) / 180;
@@ -962,17 +1090,16 @@ Lines2D drawSystem3D(const LParser::LSystem3D &l_system, const int &size, vector
     string endingString;
     // Replace symbols
     for( int i = 0; i < nr_iterations; i++){
-        //startingString = getEndString(l_system, startingString, endingString);
+        startingString = getEndString3D(l_system, startingString, endingString);
     }
-    Point2D currentPoint(0,0);
-    //return createSystemLines(l_system,lines,startingString,endingString,startingAngle,angle,lineColor,currentPoint,0);
+    Vector3D currentPoint = Vector3D::point(0,0,0);
+    return createSystemLines3D(l_system,startingString,angle,lineColor,currentPoint,0);
 }
 
 
 Figure* drawLineDrawing(double &scale , double &rotX , double &rotY , double &rotZ , int &nrPoints , int &nrLines ,
                        const ini::Configuration &configuration , vector<double> &lineColor , vector<double> &center ,
                        Matrix &m_eye , int &i){
-
     // Make new Figure class
     vector<Vector3D> points;
     vector<Face> faces;
@@ -1118,6 +1245,19 @@ Figures3D drawWireframe(int &size , vector<double> &eye , vector<double> &backgr
             int _m = configuration["Figure"+to_string(i)]["m"].as_int_or_die();
             Figure* newFigure;
             newFigure = createTorus( _r , _R , _n , _m , lineColor);
+            newFigure->applyTransformation(m);
+            figures.push_back(newFigure);
+        }
+        // Figure_type == "3DLSystem"
+        else if (figure_type == "3DLSystem"){
+            string inputFile = configuration["Figure"+to_string(i)]["inputfile"].as_string_or_die();
+            // Initialize the parser
+            LParser::LSystem3D l_system;
+            ifstream input_stream(inputFile);
+            input_stream >> l_system;
+            input_stream.close();
+            Figure* newFigure;
+            newFigure = drawSystem3D(l_system , size , backgroundcolor , lineColor);
             newFigure->applyTransformation(m);
             figures.push_back(newFigure);
         }
