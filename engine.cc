@@ -1295,7 +1295,6 @@ Figures3D drawWireframe(int &size , vector<double> &eye , vector<double> &backgr
 // Session 4 : Z-Buffering
 
 double calculateInvZ(unsigned int &i , unsigned int i_min , unsigned int i_max , const double &z0 , const double &z1){
-
     // Calculate current p
     double p = i / (i_max - i_min + 1);
     return (p / z0) + ((1 - p) / z1);
