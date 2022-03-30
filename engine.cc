@@ -12,7 +12,7 @@
 #include <list>
 #include <algorithm>
 #include <utility>
-#include <assert.h>
+#include <cassert>
 #include <limits>
 // For VS Code
 /*
@@ -113,23 +113,20 @@ public:
     }
 };
 
-double posInf = numeric_limits<double>::infinity();
-double negInf = -numeric_limits<double>::infinity();
+const double posInf = numeric_limits<double>::infinity();
+const double negInf = -numeric_limits<double>::infinity();
 
 
 
-class ZBuffer{
+class ZBuffer : public vector< vector<double> >{
 public:
-    vector< vector<double> > BufferMatrix;
 
-    ZBuffer( const int width , const int height ) : BufferMatrix(vector< vector<double> > ( width , vector<double> (height , posInf) )) {}
-
-    virtual ~ZBuffer() {
-        for (auto v : BufferMatrix){
-            v.clear();
+    ZBuffer( const int width , const int height ) {
+        for (int i = 0; i < width; ++i) {
+            this->push_back(vector<double>(height , posInf) );
         }
-        BufferMatrix.clear();
     }
+
 };
 
 
@@ -139,7 +136,6 @@ typedef vector<Line2D> Lines2D;
 
 typedef vector<Figure*> Figures3D;
 
-typedef vector< vector<double> > ZBufferMatrix;
 
 // Main functionality
 
@@ -1298,9 +1294,17 @@ Figures3D drawWireframe(int &size , vector<double> &eye , vector<double> &backgr
 
 // Session 4 : Z-Buffering
 
+double calculateInvZ(unsigned int &i , unsigned int i_min , unsigned int i_max , const double &z0 , const double &z1){
+
+    // Calculate current p
+    double p = i / (i_max - i_min + 1);
+    return (p / z0) + ((1 - p) / z1);
+
+}
+
 void draw_zbuf_line( ZBuffer &zBuffer, img::EasyImage &image,
-                     unsigned int x0, unsigned int y0, const double z0,
-                     unsigned int x1, unsigned int y1, const double z1,
+                     unsigned int x0, unsigned int y0,  double &z0,
+                     unsigned int x1, unsigned int y1,  double &z1,
                      const Color &lineColor){
 
     assert( x0 < image.get_width() && y0 < image.get_height() );
@@ -1315,16 +1319,17 @@ void draw_zbuf_line( ZBuffer &zBuffer, img::EasyImage &image,
         for (unsigned int i = std::min(y0, y1); i <= std::max(y0, y1); i++)
         {
             // Calculate current p
-            double p = i / ( std::max(y0, y1) );
-            // Calculate 1/z
-            double inv_z = ( p / z0) + ( ( 1 - p) / z1 );
-            // Check if we can draw
-            if (inv_z >= zBuffer.BufferMatrix[x0][i]) {
-                continue;
+            double inv_z;
+            if (y0 < y1){
+                inv_z = calculateInvZ(i , std::min(y0, y1) , std::max(y0, y1) , z0 , z1);
             }
-            else {
+            else{
+                inv_z = calculateInvZ(i , std::min(y0, y1) , std::max(y0, y1) , z1 , z0);
+            }
+            // Check if we can draw
+            if (inv_z < zBuffer[x0][i]) {
                 // Update z-buffer
-                zBuffer.BufferMatrix[x0][i] = inv_z;
+                zBuffer[x0][i] = inv_z;
                 (image)(x0, i) = newColor;
             }
         }
@@ -1336,16 +1341,18 @@ void draw_zbuf_line( ZBuffer &zBuffer, img::EasyImage &image,
         for (unsigned int i = std::min(x0, x1); i <= std::max(x0, x1); i++)
         {
             // Calculate current p
-            double p = i / ( std::max(x0, x1) );
-            // Calculate 1/z
-            double inv_z = ( p / z0) + ( ( 1 - p) / z1 );
+            double inv_z;
+            if (x0 < x1){
+                inv_z = calculateInvZ(i , std::min(x0, x1) , std::max(x0, x1) , z0 , z1);
+            }
+            else{
+                inv_z = calculateInvZ(i , std::min(x0, x1) , std::max(x0, x1) , z1 , z0);
+            }
             // Check if we can draw
-            if (inv_z < zBuffer.BufferMatrix[i][y0]) {
+            if (inv_z < zBuffer[i][y0]) {
                 // Update z-buffer
-                zBuffer.BufferMatrix[x0][i] = inv_z;
+                zBuffer[i][y0] = inv_z;
                 (image)(i, y0) = newColor;
-            } else {
-                continue;
             }
         }
     }
@@ -1356,6 +1363,7 @@ void draw_zbuf_line( ZBuffer &zBuffer, img::EasyImage &image,
             //flip points if x1>x0: we want x0 to have the lowest value
             swap(x0, x1);
             swap(y0, y1);
+            swap(z0, z1);
         }
         // Calculate the coefficient
         double m = ((double) y1 - (double) y0) / ((double) x1 - (double) x0);
@@ -1365,17 +1373,12 @@ void draw_zbuf_line( ZBuffer &zBuffer, img::EasyImage &image,
             for (unsigned int i = 0; i <= (x1 - x0); i++)
             {
                 // Calculate current p
-                double p = i / ( x1 - x0 );
-                // Calculate 1/z
-                double inv_z = ( p / z0) + ( ( 1 - p) / z1 );
+                double inv_z = calculateInvZ(i , 0 , x1 - x0 , z0 , z1);
                 // Check if we can draw
-                if (inv_z < zBuffer.BufferMatrix[x0 + i][(unsigned int) round(y0 + m * i)]) {
+                if (inv_z < zBuffer[x0 + i][(unsigned int) round(y0 + m * i)]) {
                     // Update z-buffer
-                    zBuffer.BufferMatrix[x0][i] = inv_z;
+                    zBuffer[x0 + i][(unsigned int) round(y0 + m * i)] = inv_z;
                     (image)(x0 + i, (unsigned int) round(y0 + m * i)) = newColor;
-                }
-                else {
-                    continue;
                 }
             }
         }
@@ -1384,16 +1387,11 @@ void draw_zbuf_line( ZBuffer &zBuffer, img::EasyImage &image,
             for (unsigned int i = 0; i <= (y1 - y0); i++)
             {
                 // Calculate current p
-                double p = i / ( y1 - y0 );
-                // Calculate 1/z
-                double inv_z = ( p / z0) + ( ( 1 - p) / z1 );
-                if (inv_z < zBuffer.BufferMatrix[(unsigned int) round(x0 + (i / m))][y0 + i]) {
+                double inv_z = calculateInvZ(i , 0 , y1 - y0 , z0 , z1);
+                if (inv_z < zBuffer[(unsigned int) round(x0 + (i / m))][y0 + i]) {
                     // Update z-buffer
-                    zBuffer.BufferMatrix[x0][i] = inv_z;
+                    zBuffer[(unsigned int) round(x0 + (i / m))][y0 + i] = inv_z;
                     (image)((unsigned int) round(x0 + (i / m)), y0 + i) = newColor;
-                }
-                else {
-                    continue;
                 }
             }
         }
@@ -1402,16 +1400,11 @@ void draw_zbuf_line( ZBuffer &zBuffer, img::EasyImage &image,
             for (unsigned int i = 0; i <= (y0 - y1); i++)
             {
                 // Calculate current p
-                double p = i / ( y0 - y1 - 1);
-                // Calculate 1/z
-                double inv_z = ( p / z0) + ( ( 1 - p) / z1 );
-                if (inv_z < zBuffer.BufferMatrix[(unsigned int) round(x0 - (i / m))][y0 - i]) {
+                double inv_z = calculateInvZ(i , 0 , y0 - y1 , z0 , z1);
+                if (inv_z < zBuffer[(unsigned int) round(x0 - (i / m))][y0 - i]) {
                     // Update z-buffer
-                    zBuffer.BufferMatrix[x0][i] = inv_z;
+                    zBuffer[(unsigned int) round(x0 - (i / m))][y0 - i] = inv_z;
                     (image)((unsigned int) round(x0 - (i / m)), y0 - i) = newColor;
-                }
-                else {
-                    continue;
                 }
             }
         }
@@ -1471,7 +1464,7 @@ img::EasyImage draw2DZbuffLines (const Lines2D &lines , const int size , vector<
     img::EasyImage image(lround(imageWidth) , lround(imageHeight));
     image.clear(img::Color(bgColor.at(0) , bgColor.at(1) , bgColor.at(2) ) );
     // Create Z-Buffer
-    ZBuffer zBuffer(static_cast<const int>(lround(imageWidth)), static_cast<const int>(lround(imageHeight)));
+    ZBuffer zBuffer(image.get_width() , image.get_height());
     // Determine the scaling factor
     double d = 0.95 * (imageWidth / x_range);
     // Calculate for x and y
@@ -1504,7 +1497,6 @@ img::EasyImage draw2DZbuffLines (const Lines2D &lines , const int size , vector<
         originalColors = {l.color.red , l.color.green , l.color.blue};
         newColors = scaleColors(originalColors);
         // Draw the lines
-        //image.draw_line(x1 , y1 , x2 , y2 , img::Color(newColors.at(0) , newColors.at(1) , newColors.at(2) ) );
         draw_zbuf_line( zBuffer , image , x1 , y1 , z1 , x2 , y2 , z2 , Color( newColors.at(0) , newColors.at(1) , newColors.at(2) ) );
     }
     return image;
