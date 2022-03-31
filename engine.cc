@@ -1297,8 +1297,7 @@ Figures3D drawWireframe(int &size , vector<double> &eye , vector<double> &backgr
 double calculateInvZ(unsigned int &i , unsigned int i_min , unsigned int i_max , const double &z0 , const double &z1){
     // Calculate current p
     double p = i / (i_max - i_min + 1);
-    return (p / z0) + ((1 - p) / z1);
-
+    return p / z0 + (1 - p) / z1;
 }
 
 void draw_zbuf_line( ZBuffer &zBuffer, img::EasyImage &image,
@@ -1320,10 +1319,10 @@ void draw_zbuf_line( ZBuffer &zBuffer, img::EasyImage &image,
             // Calculate current p
             double inv_z;
             if (y0 < y1){
-                inv_z = calculateInvZ(i , std::min(y0, y1) , std::max(y0, y1) , z0 , z1);
+                inv_z = calculateInvZ(i , y0 , y1 , z0 , z1);
             }
             else{
-                inv_z = calculateInvZ(i , std::min(y0, y1) , std::max(y0, y1) , z1 , z0);
+                inv_z = calculateInvZ(i , y1 , y0 , z1 , z0);
             }
             // Check if we can draw
             if (inv_z < zBuffer[x0][i]) {
@@ -1342,10 +1341,10 @@ void draw_zbuf_line( ZBuffer &zBuffer, img::EasyImage &image,
             // Calculate current p
             double inv_z;
             if (x0 < x1){
-                inv_z = calculateInvZ(i , std::min(x0, x1) , std::max(x0, x1) , z0 , z1);
+                inv_z = calculateInvZ(i , x0 , x1 , z0 , z1);
             }
             else{
-                inv_z = calculateInvZ(i , std::min(x0, x1) , std::max(x0, x1) , z1 , z0);
+                inv_z = calculateInvZ(i , x1 , x0 , z1 , z0);
             }
             // Check if we can draw
             if (inv_z < zBuffer[i][y0]) {
@@ -1399,7 +1398,7 @@ void draw_zbuf_line( ZBuffer &zBuffer, img::EasyImage &image,
             for (unsigned int i = 0; i <= (y0 - y1); i++)
             {
                 // Calculate current p
-                double inv_z = calculateInvZ(i , 0 , y0 - y1 , z0 , z1);
+                double inv_z = calculateInvZ(i , 0 , y0 - y1 , z1 , z0);
                 if (inv_z < zBuffer[(unsigned int) round(x0 - (i / m))][y0 - i]) {
                     // Update z-buffer
                     zBuffer[(unsigned int) round(x0 - (i / m))][y0 - i] = inv_z;

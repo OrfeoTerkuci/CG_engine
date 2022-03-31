@@ -22,8 +22,19 @@ set(engine_sources
         vector/vector3d.cc
         )
 ############################################################
-# Create an executable
+# Create main executable
 ############################################################
 set(exe_name "engine")
 add_executable( ${exe_name} ${engine_sources} )
+############################################################
+# Create test specific executables
+############################################################
+add_executable( "l_systems" ${engine_sources} )
+set_target_properties("l_systems" PROPERTIES RUNTIME_OUTPUT_DIRECTORY "${PROJECT_SOURCE_DIR}/ini/l_systems" )
+add_executable( "line_drawings" ${engine_sources} )
+set_target_properties("line_drawings" PROPERTIES RUNTIME_OUTPUT_DIRECTORY "${PROJECT_SOURCE_DIR}/ini/line_drawings" )
+add_executable( "wireframes" ${engine_sources} )
+set_target_properties("wireframes" PROPERTIES RUNTIME_OUTPUT_DIRECTORY "${PROJECT_SOURCE_DIR}/ini/wireframes" )
+add_executable( "z_buffered_wireframes" ${engine_sources} )
+set_target_properties("z_buffered_wireframes" PROPERTIES RUNTIME_OUTPUT_DIRECTORY "${PROJECT_SOURCE_DIR}/ini/z_buffered_wireframes" )
 install( TARGETS ${exe_name} DESTINATION ${PROJECT_SOURCE_DIR}/ )
