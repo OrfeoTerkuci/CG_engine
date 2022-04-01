@@ -1313,17 +1313,11 @@ void draw_zbuf_line( ZBuffer &zBuffer, img::EasyImage &image,
     if (x0 == x1)
     {
         //special case for x0 == x1
-        // Vertical line : p -> [0 , a] : a = y_max
         for (unsigned int i = std::min(y0, y1); i <= std::max(y0, y1); i++)
         {
             // Calculate current p
             double inv_z;
-            if (y0 < y1){
-                inv_z = calculateInvZ(i , y0 , y1 , z0 , z1);
-            }
-            else{
-                inv_z = calculateInvZ(i , y1 , y0 , z1 , z0);
-            }
+            inv_z = y0 < y1 ? calculateInvZ(i , y0 , y1 , z0 , z1) : calculateInvZ(i , y1 , y0 , z1 , z0);
             // Check if we can draw
             if (inv_z < zBuffer[x0][i]) {
                 // Update z-buffer
@@ -1335,17 +1329,11 @@ void draw_zbuf_line( ZBuffer &zBuffer, img::EasyImage &image,
     else if (y0 == y1)
     {
         //special case for y0 == y1
-        // Horizontal line : p -> [0 , a] : a = x_max
         for (unsigned int i = std::min(x0, x1); i <= std::max(x0, x1); i++)
         {
             // Calculate current p
             double inv_z;
-            if (x0 < x1){
-                inv_z = calculateInvZ(i , x0 , x1 , z0 , z1);
-            }
-            else{
-                inv_z = calculateInvZ(i , x1 , x0 , z1 , z0);
-            }
+            inv_z = x0 < x1 ? calculateInvZ(i , x0 , x1 , z0 , z1) : calculateInvZ(i , x1 , x0 , z1 , z0);
             // Check if we can draw
             if (inv_z < zBuffer[i][y0]) {
                 // Update z-buffer
@@ -1361,17 +1349,17 @@ void draw_zbuf_line( ZBuffer &zBuffer, img::EasyImage &image,
             //flip points if x1>x0: we want x0 to have the lowest value
             swap(x0, x1);
             swap(y0, y1);
-            swap(z0, z1);
+            swap(z0, z1); //right corners fixed with swap enabled
         }
         // Calculate the coefficient
         double m = ((double) y1 - (double) y0) / ((double) x1 - (double) x0);
 
         if (-1.0 <= m && m <= 1.0)
         {
-            for (unsigned int i = 0; i <= (x1 - x0); i++)
+            for (unsigned int i = 0; i <= x1 - x0; i++)
             {
-                // Calculate current p
-                double inv_z = calculateInvZ(i , 0 , x1 - x0 , z0 , z1);
+                double inv_z;
+                inv_z = calculateInvZ(i , 0 , x1 - x0 , z0 , z1);
                 // Check if we can draw
                 if (inv_z < zBuffer[x0 + i][(unsigned int) round(y0 + m * i)]) {
                     // Update z-buffer
@@ -1382,10 +1370,10 @@ void draw_zbuf_line( ZBuffer &zBuffer, img::EasyImage &image,
         }
         else if (m > 1.0)
         {
-            for (unsigned int i = 0; i <= (y1 - y0); i++)
+            for (unsigned int i = 0; i <= y1 - y0; i++)
             {
-                // Calculate current p
-                double inv_z = calculateInvZ(i , 0 , y1 - y0 , z0 , z1);
+                double inv_z;
+                inv_z = calculateInvZ(i , 0 , y1 - y0 , z0 , z1);;
                 if (inv_z < zBuffer[(unsigned int) round(x0 + (i / m))][y0 + i]) {
                     // Update z-buffer
                     zBuffer[(unsigned int) round(x0 + (i / m))][y0 + i] = inv_z;
@@ -1393,12 +1381,14 @@ void draw_zbuf_line( ZBuffer &zBuffer, img::EasyImage &image,
                 }
             }
         }
+        // Problem here
         else if (m < -1.0)
         {
-            for (unsigned int i = 0; i <= (y0 - y1); i++)
+            for (unsigned int i = 0; i <= y0 - y1; i++)
             {
                 // Calculate current p
-                double inv_z = calculateInvZ(i , 0 , y0 - y1 , z1 , z0);
+                double inv_z;
+                inv_z = calculateInvZ(i , 0 , y0 - y1 , z0 , z1);
                 if (inv_z < zBuffer[(unsigned int) round(x0 - (i / m))][y0 - i]) {
                     // Update z-buffer
                     zBuffer[(unsigned int) round(x0 - (i / m))][y0 - i] = inv_z;
@@ -1470,8 +1460,6 @@ img::EasyImage draw2DZbuffLines (const Lines2D &lines , const int size , vector<
     double DC_y = d * ( (y_min + y_max) / 2 );
     double dx = imageWidth / 2 - DC_x;
     double dy = imageHeight / 2 - DC_y;
-    // Declare temporary variables
-    //int x1 , x2 , y1 , y2;
     // Loop through the lines again
     for (Line2D l : lines) {
         // Multiply all the points by the scaling factor
@@ -1485,10 +1473,10 @@ img::EasyImage draw2DZbuffLines (const Lines2D &lines , const int size , vector<
         l.p2.x += dx;
         l.p2.y += dy;
         // Round the coordinates
-        int x1 = lround(l.p1.x);
-        int x2 = lround(l.p2.x);
-        int y1 = lround(l.p1.y);
-        int y2 = lround(l.p2.y);
+        unsigned int x1 = lround(l.p1.x);
+        unsigned int x2 = lround(l.p2.x);
+        unsigned int y1 = lround(l.p1.y);
+        unsigned int y2 = lround(l.p2.y);
         double z1 = l.z1;
         double z2 = l.z2;
         // Fetch and rescale the colors
