@@ -1298,9 +1298,9 @@ Figures3D drawWireframe(int &size , vector<double> &eye , vector<double> &backgr
 
 // Session 4 : Z-Buffering
 
-double calculateInvZ(unsigned int &i , unsigned int i_min , unsigned int i_max , const double &z0 , const double &z1){
+double calculateInvZ(unsigned int i , unsigned int i_min , unsigned int i_max , const double &z0 , const double &z1){
     // Calculate current p
-    double p = i / (i_max - i_min + 1);
+    double p = (double)i / (double)(i_max - i_min + 1);
     return p / z0 + (1 - p) / z1;
 }
 
@@ -1319,9 +1319,8 @@ void draw_zbuf_line( ZBuffer &zBuffer, img::EasyImage &image,
         //special case for x0 == x1
         for (unsigned int i = std::min(y0, y1); i <= std::max(y0, y1); i++)
         {
-            // Calculate current p
             double inv_z;
-            inv_z = y0 < y1 ? calculateInvZ(i , y0 , y1 , z0 , z1) : calculateInvZ(i , y1 , y0 , z1 , z0);
+            inv_z = y0 < y1 ? calculateInvZ(i - y0 , y0 , y1 , z0 , z1) : calculateInvZ(i - y1 , y1 , y0 , z1 , z0);
             // Check if we can draw
             if (inv_z < zBuffer[x0][i]) {
                 // Update z-buffer
@@ -1335,9 +1334,8 @@ void draw_zbuf_line( ZBuffer &zBuffer, img::EasyImage &image,
         //special case for y0 == y1
         for (unsigned int i = std::min(x0, x1); i <= std::max(x0, x1); i++)
         {
-            // Calculate current p
             double inv_z;
-            inv_z = x0 < x1 ? calculateInvZ(i , x0 , x1 , z0 , z1) : calculateInvZ(i , x1 , x0 , z1 , z0);
+            inv_z = x0 < x1 ? calculateInvZ(i - x0 , x0 , x1 , z0 , z1) : calculateInvZ(i - x1 , x1 , x0 , z1 , z0);
             // Check if we can draw
             if (inv_z < zBuffer[i][y0]) {
                 // Update z-buffer
@@ -1377,7 +1375,7 @@ void draw_zbuf_line( ZBuffer &zBuffer, img::EasyImage &image,
             for (unsigned int i = 0; i <= y1 - y0; i++)
             {
                 double inv_z;
-                inv_z = calculateInvZ(i , 0 , y1 - y0 , z0 , z1);;
+                inv_z = calculateInvZ(i , 0 , y1 - y0 , z1 , z0);
                 if (inv_z < zBuffer[(unsigned int) round(x0 + (i / m))][y0 + i]) {
                     // Update z-buffer
                     zBuffer[(unsigned int) round(x0 + (i / m))][y0 + i] = inv_z;
@@ -1385,14 +1383,12 @@ void draw_zbuf_line( ZBuffer &zBuffer, img::EasyImage &image,
                 }
             }
         }
-        // Problem here
         else if (m < -1.0)
         {
             for (unsigned int i = 0; i <= y0 - y1; i++)
             {
-                // Calculate current p
                 double inv_z;
-                inv_z = calculateInvZ(i , 0 , y0 - y1 , z0 , z1);
+                inv_z = calculateInvZ(i , 0 , y0 - y1 , z1 , z0);
                 if (inv_z < zBuffer[(unsigned int) round(x0 - (i / m))][y0 - i]) {
                     // Update z-buffer
                     zBuffer[(unsigned int) round(x0 - (i / m))][y0 - i] = inv_z;
