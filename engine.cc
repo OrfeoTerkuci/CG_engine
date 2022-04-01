@@ -73,6 +73,10 @@ public:
 
     Line2D(const Point2D &p1, const Point2D &p2, const Color &color) : p1(p1), p2(p2), color(color) {}
 
+    Line2D(const Point2D &p1, const Point2D &p2, const Color &color, double z1, double z2) : p1(p1), p2(p2),
+                                                                                             color(color), z1(z1),
+                                                                                             z2(z2) {}
+
     virtual ~Line2D() {
 
     }
@@ -593,9 +597,9 @@ void getLinePointIndex(Face &face, Figure* &f, Lines2D &lines){
         Point2D newBeginP = doProjection(beginP, 1.0);
         Point2D newEndP = doProjection(endP, 1.0);
         // Create new line
-        Line2D newLine(newBeginP, newEndP, f->color);
-        newLine.z1 = beginP.z;
-        newLine.z2 = endP.z;
+        Line2D newLine(newBeginP, newEndP, f->color , beginP.z , endP.z);
+        //newLine.z1 = beginP.z;
+        //newLine.z2 = endP.z;
         lines.push_back(newLine);
     }
 }
