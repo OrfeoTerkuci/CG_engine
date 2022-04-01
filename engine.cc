@@ -582,7 +582,7 @@ Point2D doProjection(const Vector3D &point , const double d){
     return Point2D(x_1 , y_1);
 }
 
-void getLinePointIndex(Face &face, Figure* &f, Lines2D &lines){
+void getLinePointIndex(Face &face, Figure* &f, Lines2D &lines , const double d){
     // Create new variables
     int b_index = 0;
     int e_index = 0;
@@ -594,8 +594,8 @@ void getLinePointIndex(Face &face, Figure* &f, Lines2D &lines){
         Vector3D beginP = f->points[b_index];
         Vector3D endP = f->points[e_index];
         // Convert Vector3D to Point2D
-        Point2D newBeginP = doProjection(beginP, 1.0);
-        Point2D newEndP = doProjection(endP, 1.0);
+        Point2D newBeginP = doProjection(beginP, d);
+        Point2D newEndP = doProjection(endP, d);
         // Create new line
         Line2D newLine(newBeginP, newEndP, f->color , beginP.z , endP.z);
         //newLine.z1 = beginP.z;
@@ -604,12 +604,12 @@ void getLinePointIndex(Face &face, Figure* &f, Lines2D &lines){
     }
 }
 
-Lines2D doProjection(Figures3D &figs){
+Lines2D doProjection(Figures3D &figs , const double d){
     Lines2D lines;
     for(Figure* f : figs){
         for(Face face : f->faces){
             // Get points index - loop through
-            getLinePointIndex(face, f, lines);
+            getLinePointIndex(face, f, lines , d);
         }
     }
     return lines;
@@ -1488,6 +1488,123 @@ img::EasyImage draw2DZbuffLines (const Lines2D &lines , const int size , vector<
     return image;
 }
 
+// Session 5 : Z-Buffering met driehoeken
+
+void getProjectedPoints(Figures3D &figs , double &d , double &x_range , double &y_range ,
+                        double &x_min, double &y_min, double &x_max, double &y_max){
+    vector<Point2D> points;
+    for(Figure* f : figs){
+        for(Face face : f->faces){
+            // Get points index - loop through
+            // Create new variables
+            int b_index = 0;
+            for (unsigned long i = 0; i < face.point_indexes.size(); ++i) {
+                // Get begin and end index
+                b_index = face.point_indexes.at(i);
+                // Get points
+                Vector3D beginP = f->points[b_index];
+                // Convert Vector3D to Point2D
+                Point2D newPoint = doProjection(beginP, d);
+                // Add the new points
+                points.push_back(newPoint);
+                // Update min and max
+                if(x_max <= newPoint.x){
+                    x_max = newPoint.x;
+                }
+                if(x_min >= newPoint.x){
+                    x_min = newPoint.x;
+                }
+                if(y_max <= newPoint.y){
+                    y_max = newPoint.y;
+                }
+                if(y_min >= newPoint.y){
+                    y_min = newPoint.y;
+                }
+            }
+        }
+    }
+    // Calculate range along the x-axis and y-axis
+    x_range = x_max - x_min;
+    y_range = y_max - y_min;
+}
+
+void triangulate(Face &originalFace , vector<Face> newFaces){
+    for (int i = 0; i < originalFace.point_indexes.size() - 2; ++i) {
+        // Create new face
+        newFaces.push_back( Face( { 0 , i , i + 1 } ) );
+    }
+}
+void draw_zbuf_triag(ZBuffer &zbuf , img::EasyImage &image ,
+        Vector3D const& A, Vector3D const& B, Vector3D const& C, double d, double dx, double dy, Color color){
+    // Projection of the triangle
+    Point2D newA = doProjection(A , d);
+    newA.x += dx;
+    newA.y += dy;
+    Point2D newB = doProjection(B , d);
+    newB.x += dx;
+    newB.y += dy;
+    Point2D newC = doProjection(C , d);
+    newC.x += dx;
+    newC.y += dy;
+    int x_min = (int) min( {newA.x , newB.x , newC.x} );
+    int x_max = (int) max( {newA.x , newB.x , newC.x} );
+    int y_min = (int) min( {newA.y , newB.y , newC.y} );
+    int y_max = (int) max( {newA.y , newB.y , newC.y} );
+    // Determine which pixels belong in the triangle
+    for (int i = y_min; i <= y_max; ++i) {
+
+    }
+    // Determine the inv_z value
+
+}
+
+img::EasyImage draw2DZbuffTriag (const int size , vector<double> &backgroundColor , vector<double> &linesColor , Figures3D &figures){
+    // Declare colors vector
+    vector<unsigned int> newColors = scaleColors(linesColor);
+    // Scale colors
+    vector<unsigned int> bgColor = scaleColors(backgroundColor);
+    // Triangulate : get the new faces
+    vector<Face> newFaces;
+    for(Figure *fig : figures){
+        for(Face f : fig->faces){
+            triangulate(f , newFaces);
+        }
+    }
+    // Calculate range along the x-axis and y-axis
+    double x_min = 0 , y_min = 0 , x_max = 0 , y_max = 0;
+    double d = 1.0;
+    double x_range;
+    double y_range;
+    getProjectedPoints(figures , d , x_range , y_range , x_min , y_min , x_max , y_max);
+    // Calculate image dimensions
+    double imageWidth   = size * (x_range / max(x_range,y_range));
+    double imageHeight  = size * (y_range / max(x_range,y_range));
+    // Create the image file
+    img::EasyImage image(lround(imageWidth) , lround(imageHeight));
+    image.clear(img::Color(bgColor.at(0) , bgColor.at(1) , bgColor.at(2) ) );
+    // Create Z-Buffer
+    ZBuffer zBuffer(image.get_width() , image.get_height());
+    // Determine the scaling factor
+    d = 0.95 * (imageWidth / x_range);
+    // Calculate for x and y
+    double DC_x = d * ( (x_min + x_max) / 2 );
+    double DC_y = d * ( (y_min + y_max) / 2 );
+    double dx = imageWidth / 2 - DC_x;
+    double dy = imageHeight / 2 - DC_y;
+    // Apply the z-buffering algorithm
+    for (Figure *fig : figures) {
+        for(Face f : fig->faces){
+            // Get the point indexes
+            int ind_A = f.point_indexes.at(0);
+            int ind_B = f.point_indexes.at(1);
+            int ind_C = f.point_indexes.at(2);
+            // Apply z-buffering algorithm
+            draw_zbuf_triag(zBuffer , image , fig->points.at(ind_A) , fig->points.at(ind_B) , fig->points.at(ind_C) ,
+                    d , dx , dy , Color(newColors.at(0) , newColors.at(1) , newColors.at(2)));
+        }
+    }
+    return image;
+}
 
 img::EasyImage generate_image(const ini::Configuration &configuration)
 {
@@ -1515,7 +1632,7 @@ img::EasyImage generate_image(const ini::Configuration &configuration)
         int nrFigures = configuration["General"]["nrFigures"].as_int_or_die();
         // Draw the wireframe
         Figures3D figures = drawWireframe(size , eye , backgroundcolor , nrFigures , configuration);
-        Lines2D lines = doProjection(figures);
+        Lines2D lines = doProjection(figures , 1.0);
         return draw2DLines(lines ,
                 size , backgroundcolor);
     }
@@ -1528,15 +1645,21 @@ img::EasyImage generate_image(const ini::Configuration &configuration)
         int nrFigures = configuration["General"]["nrFigures"].as_int_or_die();
         // Draw the wireframe
         Figures3D figures = drawWireframe(size , eye , backgroundcolor , nrFigures , configuration);
-        Lines2D lines = doProjection(figures);
+        Lines2D lines = doProjection(figures , 1.0);
         // Draw the lines
         return draw2DZbuffLines( lines , size , backgroundcolor);
     }
-    /*
-     * [ImageProperties]
-     * width = width_of_image
-     * height = height_of_image
-     */
+    else if(type == "ZBuffering"){
+        // Get general properties
+        int size = configuration["General"]["size"].as_int_or_die();
+        vector<double> eye = configuration["General"]["eye"].as_double_tuple_or_die();
+        vector<double> backgroundcolor = configuration["General"]["backgroundcolor"].as_double_tuple_or_die();
+        int nrFigures = configuration["General"]["nrFigures"].as_int_or_die();
+        // Draw the wireframe
+        Figures3D figures = drawWireframe(size , eye , backgroundcolor , nrFigures , configuration);
+        //return draw2DZbuffTriag();
+    }
+
     int width = configuration["ImageProperties"]["width"].as_int_or_die(); // Get width
     int height = configuration["ImageProperties"]["height"].as_int_or_die(); // Get height
 
