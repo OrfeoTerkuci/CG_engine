@@ -1494,33 +1494,25 @@ void getProjectedPoints(Figures3D &figs , double &d , double &x_range , double &
                         double &x_min, double &y_min, double &x_max, double &y_max){
     vector<Point2D> points;
     for(Figure* f : figs){
-        for(Face face : f->faces){
-            // Get points index - loop through
-            // Create new variables
-            int b_index = 0;
-            for (unsigned long i = 0; i < face.point_indexes.size(); ++i) {
-                // Get begin and end index
-                b_index = face.point_indexes.at(i);
-                // Get points
-                Vector3D beginP = f->points[b_index];
-                // Convert Vector3D to Point2D
-                Point2D newPoint = doProjection(beginP, d);
-                // Add the new points
-                points.push_back(newPoint);
-                // Update min and max
-                if(x_max <= newPoint.x){
-                    x_max = newPoint.x;
-                }
-                if(x_min >= newPoint.x){
-                    x_min = newPoint.x;
-                }
-                if(y_max <= newPoint.y){
-                    y_max = newPoint.y;
-                }
-                if(y_min >= newPoint.y){
-                    y_min = newPoint.y;
-                }
+        for(auto &p : f->points){
+
+            Point2D newPoint = doProjection(p, d);
+            // Add the new points
+            points.push_back(newPoint);
+            // Update min and max
+            if(x_max <= newPoint.x){
+                x_max = newPoint.x;
             }
+            if(x_min >= newPoint.x){
+                x_min = newPoint.x;
+            }
+            if(y_max <= newPoint.y){
+                y_max = newPoint.y;
+            }
+            if(y_min >= newPoint.y){
+                y_min = newPoint.y;
+            }
+
         }
     }
     // Calculate range along the x-axis and y-axis
@@ -1534,8 +1526,15 @@ void triangulate(Face &originalFace , vector<Face> newFaces){
         newFaces.push_back( Face( { 0 , i , i + 1 } ) );
     }
 }
+
+double calculateIntersection( const int& y_i ,  Point2D const& P , Point2D const& Q){
+    return Q.x + ( P.x - Q.x ) * ( ( y_i - Q.y ) / ( P.y - Q.y ) );
+}
+
 void draw_zbuf_triag(ZBuffer &zbuf , img::EasyImage &image ,
-        Vector3D const& A, Vector3D const& B, Vector3D const& C, double d, double dx, double dy, Color color){
+        Vector3D const& A, Vector3D const& B, Vector3D const& C, double &d, double &dx, double &dy, Color color){
+    // Convert color
+    img::Color newColor = img::Color(lround(color.red * 255) , lround(color.green * 255) , lround(color.blue * 255));
     // Projection of the triangle
     Point2D newA = doProjection(A , d);
     newA.x += dx;
@@ -1546,21 +1545,59 @@ void draw_zbuf_triag(ZBuffer &zbuf , img::EasyImage &image ,
     Point2D newC = doProjection(C , d);
     newC.x += dx;
     newC.y += dy;
-    int x_min = (int) min( {newA.x , newB.x , newC.x} );
-    int x_max = (int) max( {newA.x , newB.x , newC.x} );
-    int y_min = (int) min( {newA.y , newB.y , newC.y} );
-    int y_max = (int) max( {newA.y , newB.y , newC.y} );
+    // Determine y_min and y_max
+    // int x_min = (int) min( {newA.x , newB.x , newC.x} );
+    // int x_max = (int) max( {newA.x , newB.x , newC.x} );
+    double y_min = min( {newA.y , newB.y , newC.y} );
+    double y_max = max( {newA.y , newB.y , newC.y} );
+    // Determine gravity center
+    Vector3D G = Vector3D::point( (newA.x + newB.x + newC.x) / 3 , (newA.y + newB.y + newC.y) / 3 , 0);
+    double inv_z_G = 1/(3 * A.z) + 1/(3 * B.z) + 1/(3 * C.z);
+    // Determine dzdx and dzdy
+    //Vector3D u = A - B;
+    //Vector3D v = C - A;
+    Vector3D w = Vector3D::cross(B - A , C - A);
+    double k = w.x * A.x + w.y * A.y + w.z * A.z;
+    double dzdx = w.x / ( -d * k );
+    double dzdy = w.y / ( -d * k );
+    double inv_z;
+    // Create variables for x_l and x_r
+    double x_l_AB = posInf;
+    double x_l_AC = posInf;
+    double x_l_BC = posInf;
+    double x_r_AB = negInf;
+    double x_r_AC = negInf;
+    double x_r_BC = negInf;
+    int x_l;
+    int x_r;
     // Determine which pixels belong in the triangle
-    for (int i = y_min; i <= y_max; ++i) {
-
+    for (int i = (int)round(y_min + 0.5); i <= round(y_max - 0.5); ++i) {
+        // Determine x_l and x_r for each line
+        if( (i - newA.y) * (i - newB.y) <= 0 && ( newA.y != newB.y ) ){
+            x_l_AB = x_r_AB = calculateIntersection( i , newA , newB );
+        }
+        if( (i - newB.y) * (i - newC.y) <= 0 && ( newB.y != newC.y ) ){
+            x_l_BC = x_r_BC = calculateIntersection( i , newB , newC );
+        }
+        if( (i - newA.y) * (i - newC.y) <= 0 && ( newA.y != C.y ) ){
+            x_l_AC = x_r_AC = calculateIntersection( i , newA , newC );
+        }
+        // Determine x_l and x_r for y = y_i line
+        x_l = lround(min( {x_l_AB, x_l_AC, x_l_BC} ) + 0.5);
+        x_r = lround(max( {x_r_AB, x_r_AC, x_r_BC} ) - 0.5);
+        for (int j = x_l; j <= x_r; ++j) {
+            // Determine the inv_z value
+            inv_z = 1.0001 * inv_z_G + (j - G.x) * dzdx + (i - G.y) * dzdy;
+            if(inv_z < zbuf[j][i]){
+                zbuf[j][i] = inv_z;
+                image(j,i) = newColor;
+            }
+        }
     }
-    // Determine the inv_z value
 
 }
 
-img::EasyImage draw2DZbuffTriag (const int size , vector<double> &backgroundColor , vector<double> &linesColor , Figures3D &figures){
-    // Declare colors vector
-    vector<unsigned int> newColors = scaleColors(linesColor);
+img::EasyImage draw2DZbuffTriag (const int size , vector<double> &backgroundColor , Figures3D &figures){
     // Scale colors
     vector<unsigned int> bgColor = scaleColors(backgroundColor);
     // Triangulate : get the new faces
@@ -1585,7 +1622,7 @@ img::EasyImage draw2DZbuffTriag (const int size , vector<double> &backgroundColo
     // Create Z-Buffer
     ZBuffer zBuffer(image.get_width() , image.get_height());
     // Determine the scaling factor
-    d = 0.95 * (imageWidth / x_range);
+    d = 0.95 * (image.get_width() / x_range);
     // Calculate for x and y
     double DC_x = d * ( (x_min + x_max) / 2 );
     double DC_y = d * ( (y_min + y_max) / 2 );
@@ -1600,7 +1637,7 @@ img::EasyImage draw2DZbuffTriag (const int size , vector<double> &backgroundColo
             int ind_C = f.point_indexes.at(2);
             // Apply z-buffering algorithm
             draw_zbuf_triag(zBuffer , image , fig->points.at(ind_A) , fig->points.at(ind_B) , fig->points.at(ind_C) ,
-                    d , dx , dy , Color(newColors.at(0) , newColors.at(1) , newColors.at(2)));
+                    d , dx , dy , fig->color);
         }
     }
     return image;
@@ -1657,7 +1694,7 @@ img::EasyImage generate_image(const ini::Configuration &configuration)
         int nrFigures = configuration["General"]["nrFigures"].as_int_or_die();
         // Draw the wireframe
         Figures3D figures = drawWireframe(size , eye , backgroundcolor , nrFigures , configuration);
-        //return draw2DZbuffTriag();
+        return draw2DZbuffTriag(size , backgroundcolor , figures);
     }
 
     int width = configuration["ImageProperties"]["width"].as_int_or_die(); // Get width
