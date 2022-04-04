@@ -1520,10 +1520,10 @@ void getProjectedPoints(Figures3D &figs , double &d , double &x_range , double &
     y_range = y_max - y_min;
 }
 
-void triangulate(Face &originalFace , vector<Face> newFaces){
-    for (int i = 0; i < originalFace.point_indexes.size() - 2; ++i) {
+void triangulate(Face &originalFace , vector<Face> &newFaces){
+    for (int i = 1; i < originalFace.point_indexes.size() - 1; ++i) {
         // Create new face
-        newFaces.push_back( Face( { 0 , i , i + 1 } ) );
+        newFaces.push_back( Face( { originalFace.point_indexes.at(0) , originalFace.point_indexes.at(i) , originalFace.point_indexes.at(i+1) } ) );
     }
 }
 
@@ -1546,17 +1546,16 @@ void draw_zbuf_triag(ZBuffer &zbuf , img::EasyImage &image ,
     newC.x += dx;
     newC.y += dy;
     // Determine y_min and y_max
-    // int x_min = (int) min( {newA.x , newB.x , newC.x} );
-    // int x_max = (int) max( {newA.x , newB.x , newC.x} );
     double y_min = min( {newA.y , newB.y , newC.y} );
     double y_max = max( {newA.y , newB.y , newC.y} );
     // Determine gravity center
     Vector3D G = Vector3D::point( (newA.x + newB.x + newC.x) / 3 , (newA.y + newB.y + newC.y) / 3 , 0);
     double inv_z_G = 1/(3 * A.z) + 1/(3 * B.z) + 1/(3 * C.z);
+    G.z = 1/inv_z_G;
     // Determine dzdx and dzdy
-    //Vector3D u = A - B;
+    //Vector3D u = B - A;
     //Vector3D v = C - A;
-    Vector3D w = Vector3D::cross(B - A , C - A);
+    Vector3D w = Vector3D::cross(A - B , A - C);
     double k = w.x * A.x + w.y * A.y + w.z * A.z;
     double dzdx = w.x / ( -d * k );
     double dzdy = w.y / ( -d * k );
@@ -1603,9 +1602,11 @@ img::EasyImage draw2DZbuffTriag (const int size , vector<double> &backgroundColo
     // Triangulate : get the new faces
     vector<Face> newFaces;
     for(Figure *fig : figures){
-        for(Face f : fig->faces){
+        for(Face &f : fig->faces){
             triangulate(f , newFaces);
         }
+        fig->faces = newFaces;
+        newFaces.clear();
     }
     // Calculate range along the x-axis and y-axis
     double x_min = 0 , y_min = 0 , x_max = 0 , y_max = 0;
@@ -1622,7 +1623,7 @@ img::EasyImage draw2DZbuffTriag (const int size , vector<double> &backgroundColo
     // Create Z-Buffer
     ZBuffer zBuffer(image.get_width() , image.get_height());
     // Determine the scaling factor
-    d = 0.95 * (image.get_width() / x_range);
+    d = 0.95 * (imageWidth / x_range);
     // Calculate for x and y
     double DC_x = d * ( (x_min + x_max) / 2 );
     double DC_y = d * ( (y_min + y_max) / 2 );
@@ -1630,7 +1631,7 @@ img::EasyImage draw2DZbuffTriag (const int size , vector<double> &backgroundColo
     double dy = imageHeight / 2 - DC_y;
     // Apply the z-buffering algorithm
     for (Figure *fig : figures) {
-        for(Face f : fig->faces){
+        for(Face &f : fig->faces){
             // Get the point indexes
             int ind_A = f.point_indexes.at(0);
             int ind_B = f.point_indexes.at(1);
