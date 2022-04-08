@@ -880,13 +880,17 @@ Figure* createCone(vector<double> &lineColor , const int &n , const double &heig
 Figure* createCylinder(vector<double> &lineColor , const int &n , const double &height){
     // Create points
     vector<Vector3D> points;
+    vector<int> bottom_indexes;
+    vector<int> top_indexes;
     // Add points of bottom face
     for (int i = 0; i < n; ++i) {
         points.push_back ( Vector3D::point(cos( (2 * i * M_PI) / n ) , sin( (2 * i * M_PI) / n ) , 0) );
+        bottom_indexes.push_back(i);
     }
     // Add points of top face
     for (int i = n; i < 2 * n; ++i) {
         points.push_back ( Vector3D::point(cos( (2 * i * M_PI) / n ) , sin( (2 * i * M_PI) / n ) , height) );
+        top_indexes.push_back(i);
     }
     // Create faces
     vector<Face> faces;
@@ -900,6 +904,10 @@ Figure* createCylinder(vector<double> &lineColor , const int &n , const double &
             faces.push_back( Face( { j , j+1 , j+n+1 , j + n  } ) );
         }
     }
+    // Add bottom face
+    faces.push_back( Face( bottom_indexes ) );
+    // Add top face
+    faces.push_back( Face( top_indexes ) );
     // Make new figure
     Figure* newFigure;
     newFigure = new Figure(points , faces , Color(lineColor.at(0) , lineColor.at(1) , lineColor.at(2) ) );
@@ -1586,6 +1594,7 @@ void draw_zbuf_triag(ZBuffer &zbuf , img::EasyImage &image ,
                 image(j,i) = newColor;
             }
         }
+        // Reset left and right limits
         x_l_AB = posInf;
         x_l_AC = posInf;
         x_l_BC = posInf;
