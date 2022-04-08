@@ -1586,6 +1586,12 @@ void draw_zbuf_triag(ZBuffer &zbuf , img::EasyImage &image ,
                 image(j,i) = newColor;
             }
         }
+        x_l_AB = posInf;
+        x_l_AC = posInf;
+        x_l_BC = posInf;
+        x_r_AB = negInf;
+        x_r_AC = negInf;
+        x_r_BC = negInf;
     }
 
 }
