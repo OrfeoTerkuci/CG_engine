@@ -74,8 +74,11 @@ public:
     Line2D(const Point2D &p1, const Point2D &p2, const Color &color) : p1(p1), p2(p2), color(color) {}
 
     Line2D(const Point2D &p1, const Point2D &p2, const Color &color, double &z1, double &z2) : p1(p1), p2(p2),
-                                                                                             color(color), z1(z1),
-                                                                                             z2(z2) {}
+                                                                                             color(color),
+                                                                                             z1(z1), z2(z2) {}
+    Line2D(Line2D* refLine) :   p1(refLine->p1) , p2(refLine->p2) ,
+                                color(refLine->color) , z1(refLine->z1) ,
+                                z2(refLine->z2) {}
 
     virtual ~Line2D() {
 
@@ -89,6 +92,8 @@ public:
     vector<int> point_indexes;
 
     Face(const vector<int> &point_indexes) : point_indexes(point_indexes) {}
+
+    Face(Face* refFace) : point_indexes(refFace->point_indexes) {}
 
     virtual ~Face() {
 
@@ -105,6 +110,9 @@ public:
     Figure(const vector<Vector3D> &points, const vector<Face> &faces, const Color &color) : points(points),
                                                                                             faces(faces),
                                                                                             color(color) {}
+
+    Figure(Figure* refFig) : points(refFig->points) , faces(refFig->faces) , color(refFig->color) {}
+
     void applyTransformation(const Matrix &m){
         // Multiply each vector with the matrix
         for(Vector3D &v : points){
@@ -948,6 +956,30 @@ Figure* createTorus(const double &r , const double &R , const int &n , const int
     return newFigure;
 }
 
+void generateFractal(Figure& fig , Figures3D& fractal, const int nr_iterations, const double scale){
+
+    Figure* newFig;
+    Matrix m_s = scaleFigure(1/scale);
+    Matrix m_t;
+    Figures3D newFrac = fractal;
+    for (int i = 0; i < nr_iterations; ++i) {
+        fractal = newFrac;
+        for (auto &it : fractal) {
+            for (int j = 0; j < fig.points.size(); ++j) {
+                // Copy the original figure
+                newFig = new Figure(it);
+                // Scale the points
+                newFig->applyTransformation(m_s);
+                // Get translation matrix
+                m_t = translate( fig.points.at(j) - newFig->points.at(j) );
+                // Translate the points
+                newFig->applyTransformation(m_t);
+                newFrac.push_back(newFig);
+            }
+        }
+    }
+}
+
 string getEndString3D(const LParser::LSystem3D &l_system , string &startingString , string &endingString){
     // Replace symbols
     for(char c : startingString){
@@ -1298,6 +1330,51 @@ Figures3D drawWireframe(int &size , vector<double> &eye , vector<double> &backgr
             newFigure = drawSystem3D(l_system , size , backgroundcolor , lineColor);
             newFigure->applyTransformation(m);
             figures.push_back(newFigure);
+        }
+        // Figure_type == "FractalCube"
+        else if(figure_type == "FractalCube"){
+            int nr_Iterations = configuration["Figure"+to_string(i)]["nrIterations"].as_int_or_default(0);
+            double fractal_scale = configuration["Figure"+to_string(i)]["fractalScale"].as_double_or_default(1);
+            Figure* newFigure = createCube(lineColor);
+            Figures3D newFractal = {newFigure};
+            generateFractal(*newFigure , newFractal , nr_Iterations , fractal_scale);
+            figures.insert(figures.end() , newFractal.begin() , newFractal.end());
+        }
+        // Figure_type == "FractalTetrahedron"
+        else if(figure_type == "FractalTetrahedron"){
+            int nr_Iterations = configuration["Figure"+to_string(i)]["nrIterations"].as_int_or_default(0);
+            double fractal_scale = configuration["Figure"+to_string(i)]["fractalScale"].as_double_or_default(1);
+            Figure* newFigure = createTetrahedron(lineColor);
+            Figures3D newFractal = {newFigure};
+            generateFractal(*newFigure , newFractal , nr_Iterations , fractal_scale);
+            figures.insert(figures.end() , newFractal.begin() , newFractal.end());
+        }
+        // Figure_type == "FractalIcosahedron"
+        else if(figure_type == "FractalIcosahedron"){
+            int nr_Iterations = configuration["Figure"+to_string(i)]["nrIterations"].as_int_or_default(0);
+            double fractal_scale = configuration["Figure"+to_string(i)]["fractalScale"].as_double_or_default(1);
+            Figure* newFigure = createIcosahedron(lineColor);
+            Figures3D newFractal = {newFigure};
+            generateFractal(*newFigure , newFractal , nr_Iterations , fractal_scale);
+            figures.insert(figures.end() , newFractal.begin() , newFractal.end());
+        }
+        // Figure_type == "FractalOctahedron"
+        else if(figure_type == "FractalOctahedron"){
+            int nr_Iterations = configuration["Figure"+to_string(i)]["nrIterations"].as_int_or_default(0);
+            double fractal_scale = configuration["Figure"+to_string(i)]["fractalScale"].as_double_or_default(1);
+            Figure* newFigure = createOctahedron(lineColor);
+            Figures3D newFractal = {newFigure};
+            generateFractal(*newFigure , newFractal , nr_Iterations , fractal_scale);
+            figures.insert(figures.end() , newFractal.begin() , newFractal.end());
+        }
+        // Figure_type == "FractalDodecahedron"
+        else if(figure_type == "FractalDodecahedron"){
+            int nr_Iterations = configuration["Figure"+to_string(i)]["nrIterations"].as_int_or_default(0);
+            double fractal_scale = configuration["Figure"+to_string(i)]["fractalScale"].as_double_or_default(1);
+            Figure* newFigure = createDodecahedron(lineColor);
+            Figures3D newFractal = {newFigure};
+            generateFractal(*newFigure , newFractal , nr_Iterations , fractal_scale);
+            figures.insert(figures.end() , newFractal.begin() , newFractal.end());
         }
 
     }
@@ -1701,16 +1778,6 @@ img::EasyImage draw2DZbuffTriag (const int &size , vector<double> &backgroundCol
     return image;
 }
 
-// Session 6 : 3D-Fractalen en view fustrum
-
-void generateFractal(Figure& fig , Figures3D& fractal, const int nr_iterations, const double scale){
-
-    for (int i = 0; i < nr_iterations; ++i) {
-
-    }
-
-}
-
 
 
 img::EasyImage generate_image(const ini::Configuration &configuration)
@@ -1756,6 +1823,7 @@ img::EasyImage generate_image(const ini::Configuration &configuration)
         // Draw the lines
         return draw2DZbuffLines( lines , size , backgroundcolor);
     }
+    // Case: type == "ZBuffering"
     else if(type == "ZBuffering"){
         // Get general properties
         int size = configuration["General"]["size"].as_int_or_die();
@@ -1766,6 +1834,7 @@ img::EasyImage generate_image(const ini::Configuration &configuration)
         Figures3D figures = drawWireframe(size , eye , backgroundcolor , nrFigures , configuration);
         return draw2DZbuffTriag(size , backgroundcolor , figures);
     }
+
 
     int width = configuration["ImageProperties"]["width"].as_int_or_die(); // Get width
     int height = configuration["ImageProperties"]["height"].as_int_or_die(); // Get height
