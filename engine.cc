@@ -73,7 +73,7 @@ public:
 
     Line2D(const Point2D &p1, const Point2D &p2, const Color &color) : p1(p1), p2(p2), color(color) {}
 
-    Line2D(const Point2D &p1, const Point2D &p2, const Color &color, double z1, double z2) : p1(p1), p2(p2),
+    Line2D(const Point2D &p1, const Point2D &p2, const Color &color, double &z1, double &z2) : p1(p1), p2(p2),
                                                                                              color(color), z1(z1),
                                                                                              z2(z2) {}
 
@@ -1324,8 +1324,8 @@ void draw_zbuf_line( ZBuffer &zBuffer, img::EasyImage &image,
     // Vertical line
     if (x0 == x1)
     {
-//        // Test values
-//
+        // Test values
+
 //        x0 = 10;
 //        y0 = 8;
 //
@@ -1390,8 +1390,8 @@ void draw_zbuf_line( ZBuffer &zBuffer, img::EasyImage &image,
             swap(y0, y1);
             swap(z0, z1); //right corners fixed with swap enabled
         }
-//        // Test values
-//
+        // Test values
+
 //        x0 = 9;
 //        y0 = 20;
 //
@@ -1405,13 +1405,13 @@ void draw_zbuf_line( ZBuffer &zBuffer, img::EasyImage &image,
 
         if (-1.0 <= m && m <= 1.0)
         {
-            for (unsigned int i = 0; i <= x1 - x0; i++)
+            for (unsigned int i = 0; i <= (x1 - x0); i++)
             {
                 double inv_z;
 
-                inv_z = calculateInvZ(i , 0 , x1 - x0 , z0 , z1);
+                inv_z = calculateInvZ(i , 0 , (x1 - x0) , z1 , z0);
                 // Test print
-                cout << "(" << x0 + i << "," << (unsigned int) round(y0 + m * i) << ")" << "inv_z = " << inv_z << endl;
+//                cout << "(" << x0 + i << "," << (unsigned int) round(y0 + m * i) << ")" << "inv_z = " << inv_z << endl;
                 // Check if we can draw
                 if (inv_z < zBuffer[x0 + i][(unsigned int) round(y0 + m * i)]) {
                     // Update z-buffer
@@ -1422,13 +1422,13 @@ void draw_zbuf_line( ZBuffer &zBuffer, img::EasyImage &image,
         }
         else if (m > 1.0)
         {
-            for (unsigned int i = 0; i <= y1 - y0; i++)
+            for (unsigned int i = 0; i <= (y1 - y0); i++)
             {
                 double inv_z;
 
-                inv_z = calculateInvZ(i , 0 , y1 - y0 , z1 , z0);
+                inv_z = calculateInvZ(i , 0 , (y1 - y0) , z1 , z0);
                 // Test print
-                cout << "(" << (unsigned int) round(x0 + (i / m)) << "," << y0 + i << ")" << "inv_z = " << inv_z << endl;
+//                cout << "(" << (unsigned int) round(x0 + (i / m)) << "," << y0 + i << ")" << "inv_z = " << inv_z << endl;
                 if (inv_z < zBuffer[(unsigned int) round(x0 + (i / m))][y0 + i]) {
                     // Update z-buffer
                     zBuffer[(unsigned int) round(x0 + (i / m))][y0 + i] = inv_z;
@@ -1438,12 +1438,13 @@ void draw_zbuf_line( ZBuffer &zBuffer, img::EasyImage &image,
         }
         else if (m < -1.0)
         {
-            for (unsigned int i = 0; i <= y0 - y1; i++)
+            for (unsigned int i = 0; i <= (y0 - y1); i++)
             {
                 double inv_z;
-                inv_z = calculateInvZ(i , 0 , y0 - y1 , z1 , z0);
+
+                inv_z = calculateInvZ(i , 0 , (y0 - y1) , z1 , z0);
                 // Test print
-                cout << "(" << (unsigned int) round(x0 - (i / m)) << "," << y0 - i << ")" << "inv_z = " << inv_z << endl;
+//                cout << "(" << (unsigned int) round(x0 - (i / m)) << "," << y0 - i << ")" << "inv_z = " << inv_z << endl;
                 if (inv_z < zBuffer[(unsigned int) round(x0 - (i / m))][y0 - i]) {
                     // Update z-buffer
                     zBuffer[(unsigned int) round(x0 - (i / m))][y0 - i] = inv_z;
@@ -1699,6 +1700,18 @@ img::EasyImage draw2DZbuffTriag (const int &size , vector<double> &backgroundCol
     }
     return image;
 }
+
+// Session 6 : 3D-Fractalen en view fustrum
+
+void generateFractal(Figure& fig , Figures3D& fractal, const int nr_iterations, const double scale){
+
+    for (int i = 0; i < nr_iterations; ++i) {
+
+    }
+
+}
+
+
 
 img::EasyImage generate_image(const ini::Configuration &configuration)
 {
