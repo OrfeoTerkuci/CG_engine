@@ -942,9 +942,9 @@ Figure* createCylinder(vector<double> &lineColor , const int &n , const double &
         }
     }
     // Add bottom face
-    faces.push_back( Face( bottom_indexes ) );
+    faces.emplace_back(bottom_indexes);
     // Add top face
-    faces.push_back( Face( top_indexes ) );
+    faces.emplace_back(top_indexes);
     // Make new figure
     Figure* newFigure;
     newFigure = new Figure(points , faces , Color(lineColor.at(0) , lineColor.at(1) , lineColor.at(2) ) );
@@ -983,6 +983,17 @@ Figure* createTorus(const double &r , const double &R , const int &n , const int
     Figure* newFigure;
     newFigure = new Figure( points , faces , Color( lineColor.at(0) , lineColor.at(1) , lineColor.at(2) ) );
     return newFigure;
+}
+
+Figure* createBuckyBall(vector<double> &lineColor){
+    /*
+     * Voor de meeste is dit lichaam nog het beste gekend als een voetbal
+die bestaat uit 20 zeshoeken en 12 vijfhoeken. Je kan de buckyball construeren door elk van de 20 driehoeken van de icosahedron op te delen in een
+gelijkzijdige zeshoek en drie driehoeken. Zoals aangegeven in Figuur 36 ontstaan er hierdoor piramides met vijf zijdes. Wanneer we van deze piramides
+enkel het grondvlak overhouden dan verkrijgen we een buckyball. Vandaar
+dat de buckyball ook gekend is onder de naam truncated icosahedron.
+     */
+
 }
 
 void generateFractal(Figure* fig , Figures3D &fractal, const int nr_iterations, const double scale){
@@ -1413,6 +1424,16 @@ Figures3D drawWireframe(int &size , vector<double> &eye , vector<double> &backgr
             int nr_Iterations = configuration["Figure"+to_string(i)]["nrIterations"].as_int_or_default(0);
             double fractal_scale = configuration["Figure"+to_string(i)]["fractalScale"].as_double_or_default(1);
             Figure* newFigure = createDodecahedron(lineColor);
+            newFigure->applyTransformation(m);
+            Figures3D newFractal = {newFigure};
+            generateFractal(newFigure , newFractal , nr_Iterations , fractal_scale);
+            figures.insert(figures.end() , newFractal.begin() , newFractal.end());
+        }
+            // Figure_type == "FractalBuckyBall"
+        else if(figure_type == "FractalBuckyBall"){
+            int nr_Iterations = configuration["Figure"+to_string(i)]["nrIterations"].as_int_or_default(0);
+            double fractal_scale = configuration["Figure"+to_string(i)]["fractalScale"].as_double_or_default(1);
+            Figure* newFigure = createBuckyBall(lineColor);
             newFigure->applyTransformation(m);
             Figures3D newFractal = {newFigure};
             generateFractal(newFigure , newFractal , nr_Iterations , fractal_scale);
