@@ -539,6 +539,18 @@ Vector3D Vector3D::normalise(Vector3D arg)
         return arg;
 }
 
+bool Vector3D::operator==(Vector3D &rhs) {
+    return ( (x == rhs.x) && (y == rhs.y) && (z == rhs.z) && (infty == rhs.infty) );
+}
+
+bool Vector3D::operator<<(Vector3D &rhs) {
+    return length() < rhs.length();
+}
+
+bool Vector3D::operator>>(Vector3D &rhs) {
+    return length() > rhs.length();
+}
+
 std::ostream &operator<<(std::ostream   &output_stream,
                          const Vector3D &vector)
 {

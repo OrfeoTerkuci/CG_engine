@@ -14,6 +14,7 @@
 #include <utility>
 #include <cassert>
 #include <limits>
+#include <map>
 // For VS Code
 /*
 #ifndef M_PI
@@ -985,20 +986,103 @@ Figure* createTorus(const double &r , const double &R , const int &n , const int
     return newFigure;
 }
 
-Figure* createBuckyBall(vector<double> &lineColor){
-    /*
-     * Voor de meeste is dit lichaam nog het beste gekend als een voetbal
-die bestaat uit 20 zeshoeken en 12 vijfhoeken. Je kan de buckyball construeren door elk van de 20 driehoeken van de icosahedron op te delen in een
-gelijkzijdige zeshoek en drie driehoeken. Zoals aangegeven in Figuur 36 ontstaan er hierdoor piramides met vijf zijdes. Wanneer we van deze piramides
-enkel het grondvlak overhouden dan verkrijgen we een buckyball. Vandaar
-dat de buckyball ook gekend is onder de naam truncated icosahedron.
-     */
+void splitTriangleHexagon(Face &originalTriangle , Figure* &originalFigure , vector<Face> &newFaces , vector<vector<Vector3D>> pentagons){
+    // Get the points of the triangle
+    int index_A = originalTriangle.point_indexes.at(0);
+    int index_B = originalTriangle.point_indexes.at(1);
+    int index_C = originalTriangle.point_indexes.at(2);
+    Vector3D A = originalFigure->points.at(index_A);
+    Vector3D B = originalFigure->points.at(index_B);
+    Vector3D C = originalFigure->points.at(index_C);
+    // Calculate new points
+    Vector3D D = (A + B) / 3;
+    Vector3D E = D * 2;
+    Vector3D F = (B + C) / 3;
+    Vector3D G = F * 2;
+    Vector3D H = (A + C) / 3;
+    Vector3D I = H * 2;
+    // Push points to figure
+    originalFigure->points.push_back(D);
+    int index_D = static_cast<int>(originalFigure->points.size() - 1);
+
+    originalFigure->points.push_back(E);
+    int index_E = static_cast<int>(originalFigure->points.size() - 1);
+
+    originalFigure->points.push_back(F);
+    int index_F = static_cast<int>(originalFigure->points.size() - 1);
+
+    originalFigure->points.push_back(G);
+    int index_G = static_cast<int>(originalFigure->points.size() - 1);
+
+    originalFigure->points.push_back(H);
+    int index_H = static_cast<int>(originalFigure->points.size() - 1);
+
+    originalFigure->points.push_back(I);
+    int index_I = static_cast<int>(originalFigure->points.size() - 1);
+
+    // Create hexagon
+    newFaces.push_back( Face( {index_D , index_E , index_F , index_G , index_I , index_H} ) );
+    // Insert the new points to the correct pentagon vector
+    for(auto &v : pentagons){
+
+    }
 
 }
 
-void generateFractal(Figure* fig , Figures3D &fractal, const int nr_iterations, const double scale){
+void mergeToPentagon(vector<Face> &faces){
+    // Create temp vector for triangles
+    vector<Face> tempTriang;
+    // Get all triangles
+    for(auto &f : faces){
+        if(f.point_indexes.size() == 3){
+            tempTriang.push_back(f);
+        }
+    }
+    // Create temp variables for point indexes
+    int index_A;
+    int index_B;
+    int index_C;
+    int index_D;
+    int index_E;
+    for(auto &f : tempTriang){
 
-    Figure *newFig = nullptr;
+    }
+}
+
+Figure* createBuckyBall(vector<double> &lineColor){
+    /*
+     * Een voetbal die bestaat uit 20 zeshoeken en 12 vijfhoeken.
+     * Elk van de 20 driehoeken van de icosahedron op te delen in eengelijkzijdige zeshoek en drie driehoeken.
+     */
+    // Create an icosahedron
+    Figure* newIcoSphere = createIcosahedron(lineColor);
+    // Create temporary faces vector
+    vector<Face>newFaces;
+    // Create temporary points vector
+    vector<Vector3D> points;
+    // Create pentagons
+    vector< vector<Vector3D> >pentagons;
+    for(auto &p : newIcoSphere->points){
+        pentagons.push_back({p});
+    }
+    // Split each triangle into 4
+    for (Face &f : newIcoSphere->faces){
+        splitTriangleHexagon( f , newIcoSphere , newFaces , pentagons);
+    }
+    // Update the faces vector
+    mergeToPentagon(newFaces);
+    newIcoSphere->faces = newFaces;
+    // Rescale all the points
+    for (Vector3D &p : newIcoSphere->points){
+        p.normalise();
+    }
+    return newIcoSphere;
+
+}
+
+void generateFractal(Figures3D &fractal, const int nr_iterations, const double scale){
+
+    Figure* newFig = nullptr;
     // Create scaling matrix
     Matrix m_s = scaleFigure(1/scale);
     // Create empty translating matrix
@@ -1379,6 +1463,12 @@ Figures3D drawWireframe(int &size , vector<double> &eye , vector<double> &backgr
             newFigure->applyTransformation(m);
             figures.push_back(newFigure);
         }
+        else if (figure_type == "BuckyBall"){
+            Figure* newFigure;
+            newFigure = createBuckyBall(lineColor);
+            newFigure->applyTransformation(m);
+            figures.push_back(newFigure);
+        }
         // Figure_type == "FractalCube"
         else if(figure_type == "FractalCube"){
             int nr_Iterations = configuration["Figure"+to_string(i)]["nrIterations"].as_int_or_default(0);
@@ -1386,7 +1476,7 @@ Figures3D drawWireframe(int &size , vector<double> &eye , vector<double> &backgr
             Figure* newFigure = createCube(lineColor);
             newFigure->applyTransformation(m);
             Figures3D newFractal = {newFigure};
-            generateFractal(newFigure , newFractal , nr_Iterations , fractal_scale);
+            generateFractal(newFractal , nr_Iterations , fractal_scale);
             figures.insert(figures.end() , newFractal.begin() , newFractal.end());
         }
         // Figure_type == "FractalTetrahedron"
@@ -1396,7 +1486,7 @@ Figures3D drawWireframe(int &size , vector<double> &eye , vector<double> &backgr
             Figure* newFigure = createTetrahedron(lineColor);
             newFigure->applyTransformation(m);
             Figures3D newFractal = {newFigure};
-            generateFractal(newFigure , newFractal , nr_Iterations , fractal_scale);
+            generateFractal(newFractal , nr_Iterations , fractal_scale);
             figures.insert(figures.end() , newFractal.begin() , newFractal.end());
         }
         // Figure_type == "FractalIcosahedron"
@@ -1406,7 +1496,7 @@ Figures3D drawWireframe(int &size , vector<double> &eye , vector<double> &backgr
             Figure* newFigure = createIcosahedron(lineColor);
             newFigure->applyTransformation(m);
             Figures3D newFractal = {newFigure};
-            generateFractal(newFigure , newFractal , nr_Iterations , fractal_scale);
+            generateFractal(newFractal , nr_Iterations , fractal_scale);
             figures.insert(figures.end() , newFractal.begin() , newFractal.end());
         }
         // Figure_type == "FractalOctahedron"
@@ -1416,7 +1506,7 @@ Figures3D drawWireframe(int &size , vector<double> &eye , vector<double> &backgr
             Figure* newFigure = createOctahedron(lineColor);
             newFigure->applyTransformation(m);
             Figures3D newFractal = {newFigure};
-            generateFractal(newFigure , newFractal , nr_Iterations , fractal_scale);
+            generateFractal(newFractal , nr_Iterations , fractal_scale);
             figures.insert(figures.end() , newFractal.begin() , newFractal.end());
         }
         // Figure_type == "FractalDodecahedron"
@@ -1426,7 +1516,7 @@ Figures3D drawWireframe(int &size , vector<double> &eye , vector<double> &backgr
             Figure* newFigure = createDodecahedron(lineColor);
             newFigure->applyTransformation(m);
             Figures3D newFractal = {newFigure};
-            generateFractal(newFigure , newFractal , nr_Iterations , fractal_scale);
+            generateFractal(newFractal , nr_Iterations , fractal_scale);
             figures.insert(figures.end() , newFractal.begin() , newFractal.end());
         }
             // Figure_type == "FractalBuckyBall"
@@ -1436,10 +1526,9 @@ Figures3D drawWireframe(int &size , vector<double> &eye , vector<double> &backgr
             Figure* newFigure = createBuckyBall(lineColor);
             newFigure->applyTransformation(m);
             Figures3D newFractal = {newFigure};
-            generateFractal(newFigure , newFractal , nr_Iterations , fractal_scale);
+            generateFractal(newFractal , nr_Iterations , fractal_scale);
             figures.insert(figures.end() , newFractal.begin() , newFractal.end());
         }
-
     }
     return figures;
 }

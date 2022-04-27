@@ -346,6 +346,24 @@ class Vector3D
                 Vector3D &operator*=(const double rhs);
 
                 /**
+                 * \param rhs Comparision vector
+                 * \return True if vectors are equal
+                 */
+                bool operator==(Vector3D &rhs);
+
+                /**
+                 * \param rhs Comparision vector
+                 * \return True if this < rhs
+                 */
+                bool operator<<(Vector3D &rhs);
+
+                /**
+                 * \param rhs Comparision vector
+                 * \return True if this > rhs
+                 */
+                bool operator>>(Vector3D &rhs);
+
+                /**
                  * \brief Applies a transformation
                  *
                  * Please note that before the transformation is actually performed, assertions are used to make sure that passed Matrix objects represents a VALID
