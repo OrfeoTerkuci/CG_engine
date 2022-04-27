@@ -29,6 +29,12 @@ public:
     double green;
     double blue;
 
+    /**
+     * @brief Constructs a Color type object
+     * @param red Value of red component
+     * @param green Value of green component
+     * @param blue Value of blue component
+     */
     Color(double red, double green, double blue) : red(red), green(green), blue(blue) {}
 
     virtual ~Color() {
@@ -41,6 +47,11 @@ public:
     double x;
     double y;
 
+    /**
+     * @brief Constructs a Point2D type object
+     * @param x x-coordinate
+     * @param y y-coordinate
+     */
     Point2D(double x, double y) : x(x), y(y) {}
 
     virtual ~Point2D() {
@@ -71,11 +82,29 @@ public:
     double z1;
     double z2;
 
+    /**
+     *
+     * @param p1 Begin point : Point2D type object
+     * @param p2 End point : Point2D type object
+     * @param color Line color : Color type object
+     */
     Line2D(const Point2D &p1, const Point2D &p2, const Color &color) : p1(p1), p2(p2), color(color) {}
 
+    /**
+     *
+     * @param p1 Begin point : Point2D type object
+     * @param p2 End point : Point2D type object
+     * @param color Line color : Color type object
+     * @param z1 z-coordinate of begin point
+     * @param z2 z-coordinate of end point
+     */
     Line2D(const Point2D &p1, const Point2D &p2, const Color &color, double &z1, double &z2) : p1(p1), p2(p2),
                                                                                              color(color),
                                                                                              z1(z1), z2(z2) {}
+    /**
+     * @brief Constructs a Line2D from a reference object
+     * @param refLine A pointer to a Line2D type object
+     */
     Line2D(Line2D* refLine) :   p1(refLine->p1) , p2(refLine->p2) ,
                                 color(refLine->color) , z1(refLine->z1) ,
                                 z2(refLine->z2) {}
@@ -956,27 +985,35 @@ Figure* createTorus(const double &r , const double &R , const int &n , const int
     return newFigure;
 }
 
-void generateFractal(Figure& fig , Figures3D& fractal, const int nr_iterations, const double scale){
+void generateFractal(Figure* fig , Figures3D &fractal, const int nr_iterations, const double scale){
 
-    Figure* newFig;
+    Figure *newFig = nullptr;
+    // Create scaling matrix
     Matrix m_s = scaleFigure(1/scale);
+    // Create empty translating matrix
     Matrix m_t;
-    Figures3D newFrac = fractal;
+    // Copy begin point
+    Figures3D newFractal;
+    // For each iteration
     for (int i = 0; i < nr_iterations; ++i) {
-        fractal = newFrac;
+        // For each figure
         for (auto &it : fractal) {
-            for (int j = 0; j < fig.points.size(); ++j) {
+            // For each point
+            for (int j = 0; j < it->points.size(); ++j) {
                 // Copy the original figure
                 newFig = new Figure(it);
-                // Scale the points
+                // Scale the figure
                 newFig->applyTransformation(m_s);
                 // Get translation matrix
-                m_t = translate( fig.points.at(j) - newFig->points.at(j) );
+                m_t = translate( it->points.at(j) - newFig->points.at(j) );
                 // Translate the points
                 newFig->applyTransformation(m_t);
-                newFrac.push_back(newFig);
+                // Add figure to list of fractals
+                newFractal.push_back(newFig);
             }
         }
+        fractal = newFractal;
+        newFractal = {};
     }
 }
 
@@ -1336,8 +1373,9 @@ Figures3D drawWireframe(int &size , vector<double> &eye , vector<double> &backgr
             int nr_Iterations = configuration["Figure"+to_string(i)]["nrIterations"].as_int_or_default(0);
             double fractal_scale = configuration["Figure"+to_string(i)]["fractalScale"].as_double_or_default(1);
             Figure* newFigure = createCube(lineColor);
+            newFigure->applyTransformation(m);
             Figures3D newFractal = {newFigure};
-            generateFractal(*newFigure , newFractal , nr_Iterations , fractal_scale);
+            generateFractal(newFigure , newFractal , nr_Iterations , fractal_scale);
             figures.insert(figures.end() , newFractal.begin() , newFractal.end());
         }
         // Figure_type == "FractalTetrahedron"
@@ -1345,8 +1383,9 @@ Figures3D drawWireframe(int &size , vector<double> &eye , vector<double> &backgr
             int nr_Iterations = configuration["Figure"+to_string(i)]["nrIterations"].as_int_or_default(0);
             double fractal_scale = configuration["Figure"+to_string(i)]["fractalScale"].as_double_or_default(1);
             Figure* newFigure = createTetrahedron(lineColor);
+            newFigure->applyTransformation(m);
             Figures3D newFractal = {newFigure};
-            generateFractal(*newFigure , newFractal , nr_Iterations , fractal_scale);
+            generateFractal(newFigure , newFractal , nr_Iterations , fractal_scale);
             figures.insert(figures.end() , newFractal.begin() , newFractal.end());
         }
         // Figure_type == "FractalIcosahedron"
@@ -1354,8 +1393,9 @@ Figures3D drawWireframe(int &size , vector<double> &eye , vector<double> &backgr
             int nr_Iterations = configuration["Figure"+to_string(i)]["nrIterations"].as_int_or_default(0);
             double fractal_scale = configuration["Figure"+to_string(i)]["fractalScale"].as_double_or_default(1);
             Figure* newFigure = createIcosahedron(lineColor);
+            newFigure->applyTransformation(m);
             Figures3D newFractal = {newFigure};
-            generateFractal(*newFigure , newFractal , nr_Iterations , fractal_scale);
+            generateFractal(newFigure , newFractal , nr_Iterations , fractal_scale);
             figures.insert(figures.end() , newFractal.begin() , newFractal.end());
         }
         // Figure_type == "FractalOctahedron"
@@ -1363,8 +1403,9 @@ Figures3D drawWireframe(int &size , vector<double> &eye , vector<double> &backgr
             int nr_Iterations = configuration["Figure"+to_string(i)]["nrIterations"].as_int_or_default(0);
             double fractal_scale = configuration["Figure"+to_string(i)]["fractalScale"].as_double_or_default(1);
             Figure* newFigure = createOctahedron(lineColor);
+            newFigure->applyTransformation(m);
             Figures3D newFractal = {newFigure};
-            generateFractal(*newFigure , newFractal , nr_Iterations , fractal_scale);
+            generateFractal(newFigure , newFractal , nr_Iterations , fractal_scale);
             figures.insert(figures.end() , newFractal.begin() , newFractal.end());
         }
         // Figure_type == "FractalDodecahedron"
@@ -1372,8 +1413,9 @@ Figures3D drawWireframe(int &size , vector<double> &eye , vector<double> &backgr
             int nr_Iterations = configuration["Figure"+to_string(i)]["nrIterations"].as_int_or_default(0);
             double fractal_scale = configuration["Figure"+to_string(i)]["fractalScale"].as_double_or_default(1);
             Figure* newFigure = createDodecahedron(lineColor);
+            newFigure->applyTransformation(m);
             Figures3D newFractal = {newFigure};
-            generateFractal(*newFigure , newFractal , nr_Iterations , fractal_scale);
+            generateFractal(newFigure , newFractal , nr_Iterations , fractal_scale);
             figures.insert(figures.end() , newFractal.begin() , newFractal.end());
         }
 
@@ -1401,25 +1443,12 @@ void draw_zbuf_line( ZBuffer &zBuffer, img::EasyImage &image,
     // Vertical line
     if (x0 == x1)
     {
-        // Test values
-
-//        x0 = 10;
-//        y0 = 8;
-//
-//        x1 = 10;
-//        y1 = 10;
-//
-//        z0 = 1;
-//        z1 = 10;
-
         //special case for x0 == x1
         for (unsigned int i = std::min(y0, y1); i <= std::max(y0, y1); i++)
         {
             double inv_z;
 
             inv_z = y0 < y1 ? calculateInvZ(i - y0 , y0 , y1 , z0 , z1) : calculateInvZ(i - y1 , y1 , y0 , z1 , z0);
-            // Test print
-//            cout << "(" << x0 << "," << i << ")" << "inv_z = " << inv_z << endl;
             // Check if we can draw
             if (inv_z < zBuffer[x0][i]) {
                 // Update z-buffer
@@ -1431,25 +1460,12 @@ void draw_zbuf_line( ZBuffer &zBuffer, img::EasyImage &image,
     // Horizontal line
     else if (y0 == y1)
     {
-//        // Test values
-//
-//        x0 = 8;
-//        y0 = 10;
-//
-//        x1 = 10;
-//        y1 = 10;
-//
-//        z0 = 1;
-//        z1 = 10;
-
         //special case for y0 == y1
         for (unsigned int i = std::min(x0, x1); i <= std::max(x0, x1); i++)
         {
             double inv_z;
 
             inv_z = x0 < x1 ? calculateInvZ(i - x0 , x0 , x1 , z0 , z1) : calculateInvZ(i - x1 , x1 , x0 , z1 , z0);
-            // Test print
-//            cout << "(" << i << "," << y0<< ")" << "inv_z = " << inv_z << endl;
             // Check if we can draw
             if (inv_z < zBuffer[i][y0]) {
                 // Update z-buffer
@@ -1467,16 +1483,6 @@ void draw_zbuf_line( ZBuffer &zBuffer, img::EasyImage &image,
             swap(y0, y1);
             swap(z0, z1); //right corners fixed with swap enabled
         }
-        // Test values
-
-//        x0 = 9;
-//        y0 = 20;
-//
-//        x1 = 19;
-//        y1 = 5;
-//
-//        z0 = 1;
-//        z1 = 10;
         // Calculate the coefficient
         double m = ((double) y1 - (double) y0) / ((double) x1 - (double) x0);
 
@@ -1487,8 +1493,6 @@ void draw_zbuf_line( ZBuffer &zBuffer, img::EasyImage &image,
                 double inv_z;
 
                 inv_z = calculateInvZ(i , 0 , (x1 - x0) , z1 , z0);
-                // Test print
-//                cout << "(" << x0 + i << "," << (unsigned int) round(y0 + m * i) << ")" << "inv_z = " << inv_z << endl;
                 // Check if we can draw
                 if (inv_z < zBuffer[x0 + i][(unsigned int) round(y0 + m * i)]) {
                     // Update z-buffer
@@ -1504,8 +1508,6 @@ void draw_zbuf_line( ZBuffer &zBuffer, img::EasyImage &image,
                 double inv_z;
 
                 inv_z = calculateInvZ(i , 0 , (y1 - y0) , z1 , z0);
-                // Test print
-//                cout << "(" << (unsigned int) round(x0 + (i / m)) << "," << y0 + i << ")" << "inv_z = " << inv_z << endl;
                 if (inv_z < zBuffer[(unsigned int) round(x0 + (i / m))][y0 + i]) {
                     // Update z-buffer
                     zBuffer[(unsigned int) round(x0 + (i / m))][y0 + i] = inv_z;
@@ -1520,8 +1522,6 @@ void draw_zbuf_line( ZBuffer &zBuffer, img::EasyImage &image,
                 double inv_z;
 
                 inv_z = calculateInvZ(i , 0 , (y0 - y1) , z1 , z0);
-                // Test print
-//                cout << "(" << (unsigned int) round(x0 - (i / m)) << "," << y0 - i << ")" << "inv_z = " << inv_z << endl;
                 if (inv_z < zBuffer[(unsigned int) round(x0 - (i / m))][y0 - i]) {
                     // Update z-buffer
                     zBuffer[(unsigned int) round(x0 - (i / m))][y0 - i] = inv_z;
