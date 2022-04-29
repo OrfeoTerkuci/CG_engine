@@ -23,7 +23,7 @@ X: Niet werkend of niet geïmplementeerd
 | 5 | Triangulatie              | V |
 |   | Z-buffering (driehoeken)  | V |
 | 6 | 3D fractalen              | V |
-|   | BuckyBall                 |   |
+|   | BuckyBall                 | V |
 |   | Mengerspons               |   |
 |   | View Frustum              |   |
 | 7 | Ambient licht             |   |
