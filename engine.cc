@@ -986,21 +986,32 @@ Figure* createTorus(const double &r , const double &R , const int &n , const int
     return newFigure;
 }
 
-void insertToPentagon(int index_A , int index_D , int index_I , map< int , vector<int> > &pentagons){
+void insertToPentagon(int index_A , int index_D , int index_I , Vector3D &D , Vector3D &I , map< int , vector<int> > &pentagons , vector<Vector3D> &originalPoints){
     // First pair of points
     if ( pentagons[index_A].empty() ){
         pentagons[index_A].push_back(index_D);
         pentagons[index_A].push_back(index_I);
         return;
     }
+    else if( pentagons[index_A].size() == 5 ){
+        return;
+    }
     // Last pair of points
-    else if ( pentagons[index_A].front() == index_I){
+    else if ( pentagons[index_A].front() == index_D && pentagons[index_A].at(1) != index_I){
+        pentagons[index_A].insert(pentagons[index_A].begin() , index_I);
+        return;
+    }
+    else if ( pentagons[index_A].front() == index_I && pentagons[index_A].at(1) != index_D ){
         pentagons[index_A].insert(pentagons[index_A].begin() , index_D);
         return;
     }
         // Second pair of points
-    else if ( pentagons[index_A].back() == index_D ){
+    else if (pentagons[index_A].back() == index_D && pentagons[index_A].at(pentagons[index_A].size() - 1) == index_I){
         pentagons[index_A].push_back(index_I);
+        return;
+    }
+    else if (pentagons[index_A].back() == index_I && pentagons[index_A].at(pentagons[index_A].size() - 1) == index_D){
+        pentagons[index_A].push_back(index_D);
         return;
     }
         // Pair in the middle
@@ -1013,16 +1024,23 @@ void insertToPentagon(int index_A , int index_D , int index_I , map< int , vecto
             }
             else if ( pentagons[index_A].at(j) == index_I){
                 // Insert before this point
-                pentagons[index_A].insert(pentagons[index_A].begin() + j - 1 , index_D);
+                pentagons[index_A].insert(pentagons[index_A].begin() + j , index_D);
                 return;
             }
         }
         // If line cannot be connected to previously present points
         pentagons[index_A].push_back(index_D);
-        pentagons[index_A].push_back(index_I);
         return;
     }
+}
 
+int isElementOf(vector<Vector3D> &points, Vector3D &p){
+    for (unsigned int i = 0; i < points.size(); ++i) {
+        if(points.at(i) == p){
+            return i;
+        }
+    }
+    return static_cast<int>(points.size());
 }
 
 void splitTriangleHexagon(Face &originalTriangle , Figure* &originalFigure , vector<Face> &newFaces , map< int , vector<int> > &pentagons){
@@ -1034,39 +1052,55 @@ void splitTriangleHexagon(Face &originalTriangle , Figure* &originalFigure , vec
     Vector3D B = originalFigure->points.at(index_B);
     Vector3D C = originalFigure->points.at(index_C);
     // Calculate new points
-    Vector3D D = (A + B) / 3;
-    Vector3D E = D * 2;
-    Vector3D F = (B + C) / 3;
-    Vector3D G = F * 2;
-    Vector3D H = (A + C) / 3;
-    Vector3D I = H * 2;
+    Vector3D D = 2 * (A / 3) + B / 3;
+    Vector3D E = 2 * (B / 3) + A / 3;
+    Vector3D F = 2 * (B / 3) + C / 3;
+    Vector3D G = 2 * (C / 3) + B / 3;
+    Vector3D I = 2 * (A / 3) + C / 3;
+    Vector3D H = 2 * (C / 3) + A / 3;
     // Push points to figure
-    originalFigure->points.push_back(D);
-    int index_D = static_cast<int>(originalFigure->points.size() - 1);
 
-    originalFigure->points.push_back(E);
-    int index_E = static_cast<int>(originalFigure->points.size() - 1);
+    int index_D = isElementOf(originalFigure->points, D);
+    if(index_D == originalFigure->points.size()){
+        originalFigure->points.push_back(D);
+        index_D = static_cast<int>(originalFigure->points.size() - 1);
+    }
 
-    originalFigure->points.push_back(F);
-    int index_F = static_cast<int>(originalFigure->points.size() - 1);
+    int index_E = isElementOf(originalFigure->points, E);
+    if(index_E == originalFigure->points.size()){
+        originalFigure->points.push_back(E);
+        index_E = static_cast<int>(originalFigure->points.size() - 1);
+    }
 
-    originalFigure->points.push_back(G);
-    int index_G = static_cast<int>(originalFigure->points.size() - 1);
-
-    originalFigure->points.push_back(H);
-    int index_H = static_cast<int>(originalFigure->points.size() - 1);
-
-    originalFigure->points.push_back(I);
-    int index_I = static_cast<int>(originalFigure->points.size() - 1);
+    int index_F = isElementOf(originalFigure->points, F);
+    if(index_F == originalFigure->points.size()){
+        originalFigure->points.push_back(F);
+        index_F = static_cast<int>(originalFigure->points.size() - 1);
+    }
+    int index_G = isElementOf(originalFigure->points, G);
+    if(index_G == originalFigure->points.size()){
+        originalFigure->points.push_back(G);
+        index_G = static_cast<int>(originalFigure->points.size() - 1);
+    }
+    int index_H = isElementOf(originalFigure->points, H);
+    if(index_H == originalFigure->points.size()){
+        originalFigure->points.push_back(H);
+        index_H = static_cast<int>(originalFigure->points.size() - 1);
+    }
+    int index_I = isElementOf(originalFigure->points, I);
+    if(index_I == originalFigure->points.size()){
+        originalFigure->points.push_back(I);
+        index_I = static_cast<int>(originalFigure->points.size() - 1);
+    }
 
     // Create hexagon
     newFaces.push_back( Face( {index_D , index_E , index_F , index_G , index_H , index_I} ) );
     // Insert new points connected to A
-    insertToPentagon(index_A , index_D , index_I , pentagons);
+    insertToPentagon(index_A , index_D , index_I , D , I , pentagons , originalFigure->points);
     // Insert new points connected to B
-    insertToPentagon(index_B , index_F , index_E , pentagons);
+    insertToPentagon(index_B , index_F , index_E , F , E , pentagons , originalFigure->points);
     // Insert new points connected to C
-    insertToPentagon(index_C , index_G , index_H , pentagons);
+    insertToPentagon(index_C , index_H , index_G , H , G , pentagons , originalFigure->points);
 }
 
 Figure* createBuckyBall(vector<double> &lineColor){
@@ -1100,6 +1134,45 @@ Figure* createBuckyBall(vector<double> &lineColor){
     }
     return newIcoSphere;
 
+}
+
+Figures3D createMengerSponge(vector<double> &lineColor , int nr_Iterations , Matrix &m ){
+    // Start with cube
+    Figures3D newSponge = {};
+    Figure* newFig = createCube(lineColor);
+    newFig->applyTransformation(m);
+    newSponge.push_back(newFig);
+    // Divide every face into nine squares
+    Matrix m_s = scaleFigure(1/3);
+    // Create empty translating matrix
+    Matrix m_t;
+    // Copy begin point
+    Figures3D newFractal;
+    // For each iteration
+    for (int i = 0; i < nr_Iterations; ++i) {
+        // For each figure
+        for (auto &it : newSponge) {
+            // For each point
+            for (int j = 0; j < it->points.size(); ++j) {
+                // Create corner cube
+                // Copy the original figure
+                newFig = new Figure(it);
+                // Scale the figure
+                newFig->applyTransformation(m_s);
+                // Get translation matrix
+                m_t = translate( it->points.at(j) - newFig->points.at(j) );
+                // Translate the points
+                newFig->applyTransformation(m_t);
+                // Add figure to list of fractals
+                newFractal.push_back(newFig);
+            }
+            // For each new figure made
+
+        }
+        newSponge = newFractal;
+        newFractal = {};
+    }
+    return newSponge;
 }
 
 void generateFractal(Figures3D &fractal, const int nr_iterations, const double scale){
@@ -1485,11 +1558,18 @@ Figures3D drawWireframe(int &size , vector<double> &eye , vector<double> &backgr
             newFigure->applyTransformation(m);
             figures.push_back(newFigure);
         }
+        // Figure_type == "BuckyBall"
         else if (figure_type == "BuckyBall"){
             Figure* newFigure;
             newFigure = createBuckyBall(lineColor);
             newFigure->applyTransformation(m);
             figures.push_back(newFigure);
+        }
+        // Figure_type = "MengerSponge"
+        else if (figure_type == "MengerSponge"){
+            int nr_Iterations = configuration["Figure"+to_string(i)]["nrIterations"].as_int_or_default(0);
+            Figures3D newSponge = createMengerSponge(lineColor , nr_Iterations , m);
+            figures.insert(figures.end() , newSponge.begin() , newSponge.end());
         }
         // Figure_type == "FractalCube"
         else if(figure_type == "FractalCube"){
