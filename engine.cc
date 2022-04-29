@@ -986,7 +986,46 @@ Figure* createTorus(const double &r , const double &R , const int &n , const int
     return newFigure;
 }
 
-void splitTriangleHexagon(Face &originalTriangle , Figure* &originalFigure , vector<Face> &newFaces , vector<vector<Vector3D>> pentagons){
+void insertToPentagon(int index_A , int index_D , int index_I , map< int , vector<int> > &pentagons){
+    // First pair of points
+    if ( pentagons[index_A].empty() ){
+        pentagons[index_A].push_back(index_D);
+        pentagons[index_A].push_back(index_I);
+        return;
+    }
+    // Last pair of points
+    else if ( pentagons[index_A].front() == index_I){
+        pentagons[index_A].insert(pentagons[index_A].begin() , index_D);
+        return;
+    }
+        // Second pair of points
+    else if ( pentagons[index_A].back() == index_D ){
+        pentagons[index_A].push_back(index_I);
+        return;
+    }
+        // Pair in the middle
+    else{
+        for(int j= 0; j < pentagons[index_A].size(); j++){
+            if( pentagons[index_A].at(j) == index_D){
+                // Insert after this point
+                pentagons[index_A].insert(pentagons[index_A].begin() + j + 1 , index_I);
+                return;
+            }
+            else if ( pentagons[index_A].at(j) == index_I){
+                // Insert before this point
+                pentagons[index_A].insert(pentagons[index_A].begin() + j - 1 , index_D);
+                return;
+            }
+        }
+        // If line cannot be connected to previously present points
+        pentagons[index_A].push_back(index_D);
+        pentagons[index_A].push_back(index_I);
+        return;
+    }
+
+}
+
+void splitTriangleHexagon(Face &originalTriangle , Figure* &originalFigure , vector<Face> &newFaces , map< int , vector<int> > &pentagons){
     // Get the points of the triangle
     int index_A = originalTriangle.point_indexes.at(0);
     int index_B = originalTriangle.point_indexes.at(1);
@@ -1021,32 +1060,13 @@ void splitTriangleHexagon(Face &originalTriangle , Figure* &originalFigure , vec
     int index_I = static_cast<int>(originalFigure->points.size() - 1);
 
     // Create hexagon
-    newFaces.push_back( Face( {index_D , index_E , index_F , index_G , index_I , index_H} ) );
-    // Insert the new points to the correct pentagon vector
-    for(auto &v : pentagons){
-
-    }
-
-}
-
-void mergeToPentagon(vector<Face> &faces){
-    // Create temp vector for triangles
-    vector<Face> tempTriang;
-    // Get all triangles
-    for(auto &f : faces){
-        if(f.point_indexes.size() == 3){
-            tempTriang.push_back(f);
-        }
-    }
-    // Create temp variables for point indexes
-    int index_A;
-    int index_B;
-    int index_C;
-    int index_D;
-    int index_E;
-    for(auto &f : tempTriang){
-
-    }
+    newFaces.push_back( Face( {index_D , index_E , index_F , index_G , index_H , index_I} ) );
+    // Insert new points connected to A
+    insertToPentagon(index_A , index_D , index_I , pentagons);
+    // Insert new points connected to B
+    insertToPentagon(index_B , index_F , index_E , pentagons);
+    // Insert new points connected to C
+    insertToPentagon(index_C , index_G , index_H , pentagons);
 }
 
 Figure* createBuckyBall(vector<double> &lineColor){
@@ -1061,16 +1081,18 @@ Figure* createBuckyBall(vector<double> &lineColor){
     // Create temporary points vector
     vector<Vector3D> points;
     // Create pentagons
-    vector< vector<Vector3D> >pentagons;
-    for(auto &p : newIcoSphere->points){
-        pentagons.push_back({p});
+    map< int , vector<int> >pentagons;
+    for(int i = 0; i < newIcoSphere->points.size(); i++){
+        pentagons[i] = {};
     }
     // Split each triangle into 4
     for (Face &f : newIcoSphere->faces){
         splitTriangleHexagon( f , newIcoSphere , newFaces , pentagons);
     }
-    // Update the faces vector
-    mergeToPentagon(newFaces);
+    // Create new pentagon faces
+    for( auto &f : pentagons ){
+        newFaces.push_back(new Face(f.second));
+    }
     newIcoSphere->faces = newFaces;
     // Rescale all the points
     for (Vector3D &p : newIcoSphere->points){
