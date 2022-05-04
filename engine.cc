@@ -1043,7 +1043,7 @@ int isElementOf(vector<Vector3D> &points, Vector3D &p){
     return static_cast<int>(points.size());
 }
 
-void splitTriangleHexagon(Face &originalTriangle , Figure* &originalFigure , vector<Face> &newFaces , map< int , vector<int> > &pentagons){
+void splitTriangleHexagon(Face &originalTriangle , Figure* &originalFigure , vector<Face> &newFaces , map< int , vector<int> > &pentagons , vector<Vector3D> &newPoints){
     // Get the points of the triangle
     int index_A = originalTriangle.point_indexes.at(0);
     int index_B = originalTriangle.point_indexes.at(1);
@@ -1060,47 +1060,47 @@ void splitTriangleHexagon(Face &originalTriangle , Figure* &originalFigure , vec
     Vector3D H = 2 * (C / 3) + A / 3;
     // Push points to figure
 
-    int index_D = isElementOf(originalFigure->points, D);
-    if(index_D == originalFigure->points.size()){
-        originalFigure->points.push_back(D);
-        index_D = static_cast<int>(originalFigure->points.size() - 1);
+    int index_D = isElementOf(newPoints, D);
+    if(index_D == newPoints.size()){
+        newPoints.push_back(D);
+        index_D = static_cast<int>(newPoints.size() - 1);
     }
 
-    int index_E = isElementOf(originalFigure->points, E);
-    if(index_E == originalFigure->points.size()){
-        originalFigure->points.push_back(E);
-        index_E = static_cast<int>(originalFigure->points.size() - 1);
+    int index_E = isElementOf(newPoints, E);
+    if(index_E == newPoints.size()){
+        newPoints.push_back(E);
+        index_E = static_cast<int>(newPoints.size() - 1);
     }
 
-    int index_F = isElementOf(originalFigure->points, F);
-    if(index_F == originalFigure->points.size()){
-        originalFigure->points.push_back(F);
-        index_F = static_cast<int>(originalFigure->points.size() - 1);
+    int index_F = isElementOf(newPoints, F);
+    if(index_F == newPoints.size()){
+        newPoints.push_back(F);
+        index_F = static_cast<int>(newPoints.size() - 1);
     }
-    int index_G = isElementOf(originalFigure->points, G);
-    if(index_G == originalFigure->points.size()){
-        originalFigure->points.push_back(G);
-        index_G = static_cast<int>(originalFigure->points.size() - 1);
+    int index_G = isElementOf(newPoints, G);
+    if(index_G == newPoints.size()){
+        newPoints.push_back(G);
+        index_G = static_cast<int>(newPoints.size() - 1);
     }
-    int index_H = isElementOf(originalFigure->points, H);
-    if(index_H == originalFigure->points.size()){
-        originalFigure->points.push_back(H);
-        index_H = static_cast<int>(originalFigure->points.size() - 1);
+    int index_H = isElementOf(newPoints, H);
+    if(index_H == newPoints.size()){
+        newPoints.push_back(H);
+        index_H = static_cast<int>(newPoints.size() - 1);
     }
-    int index_I = isElementOf(originalFigure->points, I);
-    if(index_I == originalFigure->points.size()){
-        originalFigure->points.push_back(I);
-        index_I = static_cast<int>(originalFigure->points.size() - 1);
+    int index_I = isElementOf(newPoints, I);
+    if(index_I == newPoints.size()){
+        newPoints.push_back(I);
+        index_I = static_cast<int>(newPoints.size() - 1);
     }
 
     // Create hexagon
     newFaces.push_back( Face( {index_D , index_E , index_F , index_G , index_H , index_I} ) );
     // Insert new points connected to A
-    insertToPentagon(index_A , index_D , index_I , D , I , pentagons , originalFigure->points);
+    insertToPentagon(index_A , index_D , index_I , D , I , pentagons , newPoints);
     // Insert new points connected to B
-    insertToPentagon(index_B , index_F , index_E , F , E , pentagons , originalFigure->points);
+    insertToPentagon(index_B , index_F , index_E , F , E , pentagons , newPoints);
     // Insert new points connected to C
-    insertToPentagon(index_C , index_H , index_G , H , G , pentagons , originalFigure->points);
+    insertToPentagon(index_C , index_H , index_G , H , G , pentagons , newPoints);
 }
 
 Figure* createBuckyBall(vector<double> &lineColor){
@@ -1121,13 +1121,14 @@ Figure* createBuckyBall(vector<double> &lineColor){
     }
     // Split each triangle into 4
     for (Face &f : newIcoSphere->faces){
-        splitTriangleHexagon( f , newIcoSphere , newFaces , pentagons);
+        splitTriangleHexagon( f , newIcoSphere , newFaces , pentagons , points);
     }
     // Create new pentagon faces
     for( auto &f : pentagons ){
         newFaces.push_back(new Face(f.second));
     }
     newIcoSphere->faces = newFaces;
+    newIcoSphere->points = points;
     // Rescale all the points
     for (Vector3D &p : newIcoSphere->points){
         p.normalise();
@@ -1138,12 +1139,12 @@ Figure* createBuckyBall(vector<double> &lineColor){
 
 Figures3D createMengerSponge(vector<double> &lineColor , int nr_Iterations , Matrix &m ){
     // Start with cube
-    Figures3D newSponge = {};
+    Figures3D newSponge;
     Figure* newFig = createCube(lineColor);
     newFig->applyTransformation(m);
     newSponge.push_back(newFig);
     // Divide every face into nine squares
-    Matrix m_s = scaleFigure(1/3);
+    Matrix m_s = scaleFigure( (double) 1 / 3 );
     // Create empty translating matrix
     Matrix m_t;
     // Copy begin point
@@ -1167,7 +1168,15 @@ Figures3D createMengerSponge(vector<double> &lineColor , int nr_Iterations , Mat
                 newFractal.push_back(newFig);
             }
             // For each new figure made
-
+            for(int k = 0; k < 4; k++){
+                // Copy the original figure
+                newFig = new Figure(newFractal.at(k));
+                // Scale the figure
+                newFig->applyTransformation(m_s);
+                // Get translation matrix
+                newFig->applyTransformation(m_t);
+                newFractal.push_back(newFig);
+            }
         }
         newSponge = newFractal;
         newFractal = {};
