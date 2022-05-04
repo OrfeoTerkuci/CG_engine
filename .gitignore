@@ -8,3 +8,9 @@ z_buffered_wireframes
 z_buffering
 3d_fractals
 clipping
+ambient
+ambient_clipping
+diffuse
+diffuse_clipping
+specular
+specular_clipping

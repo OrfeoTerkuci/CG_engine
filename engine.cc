@@ -595,10 +595,12 @@ void toPolar(const Vector3D &point, double &theta , double &phi , double &r){
     }
 }
 
-Matrix eyePointTrans(const Vector3D &eyePoint , double &theta , double &phi , double &r){
+Matrix eyePointTrans(const Vector3D &eyePoint , const Vector3D &viewDir , double &theta , double &phi , double &r){
     // Make vector
-    Vector3D v = Vector3D::vector(0,0,-r);
+    //Vector3D v = Vector3D::vector(0,0,-r);
+    double d_r;
     toPolar(eyePoint , theta , phi , r);
+    toPolar(-viewDir , theta , phi , d_r );
 
     Matrix m;
     m(1,1) = -sin(theta);
@@ -610,7 +612,7 @@ Matrix eyePointTrans(const Vector3D &eyePoint , double &theta , double &phi , do
     m(3,2) = sin(phi);
     m(3,3) = cos(phi);
     m(4,3) = -r;
-    // Return matrix for 2 rotations and a translation
+
     return m;
 }
 
@@ -1438,12 +1440,33 @@ Figure* drawLineDrawing(double &scale , double &rotX , double &rotY , double &ro
 
 Figures3D drawWireframe(int &size , vector<double> &eye , vector<double> &backgroundcolor , int &nrFigures ,
         const ini::Configuration &configuration ){
+    // Check for view fustrum
+    bool viewFustrum = configuration["General"]["clipping"].as_bool_or_default(false);
+    Vector3D viewDir;
+    double d_near;
+    double d_far;
+    double hfov;
+    double aspectRatio;
     // Make the variables
     double theta;
     double phi;
     double r;
     Vector3D eyePoint = Vector3D::point(eye.at(0) , eye.at(1) , eye.at(2));
-    Matrix m_eye = eyePointTrans(eyePoint , theta , phi , r);
+    // Get view fustrum components
+    if(viewFustrum){
+        // Get view fustrum components
+        vector<double> view_direction = configuration["General"]["viewDirection"].as_double_tuple_or_die();
+        d_near = configuration["General"]["dNear"].as_double_or_default(1.0);
+        d_far = configuration["General"]["dFar"].as_double_or_default(1000.0);
+        hfov = configuration["General"]["hfov"].as_double_or_default(90);
+        aspectRatio = configuration["General"]["aspectRatio"];
+
+        viewDir = Vector3D::point( view_direction.at(0) , view_direction.at(1) , view_direction.at(2) );
+    }
+    else{
+        viewDir = -eyePoint;
+    }
+    Matrix m_eye = eyePointTrans(eyePoint , viewDir , theta , phi , r);
     // Create figures vector
     Figures3D figures;
     // Get figures
