@@ -38,6 +38,10 @@ public:
      */
     Color(double red, double green, double blue) : red(red), green(green), blue(blue) {}
 
+    Color(vector<double> newColor) : red(newColor.at(0)) , green(newColor.at(1)) , blue(newColor.at(2)) {}
+
+    Color() : red(0) , green(0) , blue(0) {}
+
     virtual ~Color() {
 
     }
@@ -135,13 +139,24 @@ class Figure {
 public:
     vector<Vector3D> points;
     vector<Face> faces;
-    Color color;
+    Color ambientReflection;
+    Color diffuseReflection;
+    Color specularReflection;
+    double reflectionCoefficient;
 
     Figure(const vector<Vector3D> &points, const vector<Face> &faces, const Color &color) : points(points),
                                                                                             faces(faces),
-                                                                                            color(color) {}
+                    ambientReflection(color) , diffuseReflection(Color(0,0,0))  , specularReflection(Color(0,0,0)) ,
+                    reflectionCoefficient(0){}
 
-    Figure(Figure* refFig) : points(refFig->points) , faces(refFig->faces) , color(refFig->color) {}
+    Figure(const vector<Vector3D> &points, const vector<Face> &faces,
+            const Color &ambient , const Color &diffuse , const Color &specular): points(points) , faces(faces) ,
+                          ambientReflection(ambient) , diffuseReflection(diffuse)  , specularReflection(specular) ,
+                          reflectionCoefficient(0){}
+
+    Figure(Figure* refFig) : points(refFig->points) , faces(refFig->faces) ,
+            ambientReflection(refFig->ambientReflection) , diffuseReflection(refFig->diffuseReflection),
+            specularReflection(refFig->specularReflection) , reflectionCoefficient(refFig->reflectionCoefficient){}
 
     void applyTransformation(const Matrix &m){
         // Multiply each vector with the matrix
@@ -171,12 +186,40 @@ public:
 
 };
 
+class Light{
+public:
+    // The ambient light coefficient
+    Color ambientLight;
+    // The diffuse light coefficient
+    Color diffuseLight;
+    // The specular light coefficient
+    Color specularLight;
+
+    Light(const Color &ambientLight, const Color &diffuseLight, const Color &specularLight) : ambientLight(
+            ambientLight), diffuseLight(diffuseLight), specularLight(specularLight) {}
+};
+
+class InfLight: public Light{
+public:
+    // Direction of lighting
+    Vector3D ldVector;
+};
+
+class PointLight: public Light{
+public:
+    // The light source position
+    Vector3D location;
+    // The angle of the spotlight
+    double spotAngle;
+};
 
 // Declare new types
 
 typedef vector<Line2D> Lines2D;
 
 typedef vector<Figure*> Figures3D;
+
+typedef vector<Light*> Lights3D;
 
 
 // Main functionality
@@ -1439,7 +1482,7 @@ Figure* drawLineDrawing(double &scale , double &rotX , double &rotY , double &ro
 }
 
 Figures3D drawWireframe(int &size , vector<double> &eye , vector<double> &backgroundcolor , int &nrFigures ,
-        const ini::Configuration &configuration ){
+        const ini::Configuration &configuration , Lights3D &lights ){
     // Check for view fustrum
     bool viewFustrum = configuration["General"]["clipping"].as_bool_or_default(false);
     Vector3D viewDir;
@@ -1904,7 +1947,10 @@ double calculateIntersection( const int& y_i ,  Point2D const &P , Point2D const
 }
 
 void draw_zbuf_triag(ZBuffer &zbuf , img::EasyImage &image ,
-        Vector3D const &A, Vector3D const &B, Vector3D const &C, double &d, double &dx, double &dy, Color &color){
+        Vector3D const &A, Vector3D const &B, Vector3D const &C,
+        double &d, double &dx, double &dy,
+        Color &ambientReflection , Color &diffuseReflection , Color &specularReflection , double &reflectionCoeff ,
+        Lights3D &lights ){
     // Convert color
     img::Color newColor = img::Color(lround(color.red * 255) , lround(color.green * 255) , lround(color.blue * 255));
     // Projection of the triangle
@@ -2049,7 +2095,8 @@ img::EasyImage generate_image(const ini::Configuration &configuration)
         vector<double> backgroundcolor = configuration["General"]["backgroundcolor"].as_double_tuple_or_die();
         int nrFigures = configuration["General"]["nrFigures"].as_int_or_die();
         // Draw the wireframe
-        Figures3D figures = drawWireframe(size , eye , backgroundcolor , nrFigures , configuration);
+        Lights3D lights = {};
+        Figures3D figures = drawWireframe(size , eye , backgroundcolor , nrFigures , configuration , lights);
         Lines2D lines = doProjection(figures , 1.0);
         return draw2DLines(lines ,
                 size , backgroundcolor);
@@ -2062,7 +2109,8 @@ img::EasyImage generate_image(const ini::Configuration &configuration)
         vector<double> backgroundcolor = configuration["General"]["backgroundcolor"].as_double_tuple_or_die();
         int nrFigures = configuration["General"]["nrFigures"].as_int_or_die();
         // Draw the wireframe
-        Figures3D figures = drawWireframe(size , eye , backgroundcolor , nrFigures , configuration);
+        Lights3D lights = {};
+        Figures3D figures = drawWireframe(size , eye , backgroundcolor , nrFigures , configuration , lights);
         Lines2D lines = doProjection(figures , 1.0);
         // Draw the lines
         return draw2DZbuffLines( lines , size , backgroundcolor);
@@ -2075,7 +2123,37 @@ img::EasyImage generate_image(const ini::Configuration &configuration)
         vector<double> backgroundcolor = configuration["General"]["backgroundcolor"].as_double_tuple_or_die();
         int nrFigures = configuration["General"]["nrFigures"].as_int_or_die();
         // Draw the wireframe
-        Figures3D figures = drawWireframe(size , eye , backgroundcolor , nrFigures , configuration);
+        Lights3D lights = {};
+        Figures3D figures = drawWireframe(size , eye , backgroundcolor , nrFigures , configuration , lights);
+        return draw2DZbuffTriag(size , backgroundcolor , figures);
+    }
+    // Case: type == "LightedZBuffering"
+    else if(type == "LightedZBuffering"){
+        // Get general properties
+        int size = configuration["General"]["size"].as_int_or_die();
+        vector<double> eye = configuration["General"]["eye"].as_double_tuple_or_die();
+        vector<double> backgroundcolor = configuration["General"]["backgroundcolor"].as_double_tuple_or_die();
+        int nrFigures = configuration["General"]["nrFigures"].as_int_or_die();
+        int nrLights = configuration["General"]["nrLights"].as_int_or_default(0);
+        Lights3D lights;
+        Light* newLight;
+        vector<double> newAmbient;
+        Color AmbientColor;
+        vector<double> newDiffuse;
+        Color DiffuseColor;
+        vector<double> newSpecular;
+        Color SpecularColor;
+        for (int i = 0; i < nrLights; ++i) {
+            newAmbient = configuration["Light" + to_string(i)]["ambientLight"].as_double_tuple_or_default({1,1,1});
+            AmbientColor = Color(newAmbient);
+            newDiffuse = configuration["Light" + to_string(i)]["diffuseLight"].as_double_tuple_or_default({0,0,0});
+            DiffuseColor = Color(newDiffuse);
+            newSpecular = configuration["Light" + to_string(i)]["specularLight"].as_double_tuple_or_default({0,0,0});
+            SpecularColor = Color(newSpecular);
+            newLight = new Light(AmbientColor , DiffuseColor , SpecularColor);
+            lights.push_back(newLight);
+        }
+        Figures3D figures = drawWireframe(size , eye , backgroundcolor , nrFigures , configuration , lights);
         return draw2DZbuffTriag(size , backgroundcolor , figures);
     }
 
