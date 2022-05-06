@@ -42,6 +42,33 @@ public:
 
     Color() : red(0) , green(0) , blue(0) {}
 
+    Color operator+(const Color &ref){
+        Color col;
+        // Sum up the color components
+        col.red = this->red + ref.red;
+        col.green = this->green + ref.green;
+        col.blue = this->blue + ref.blue;
+        // Correct overshoot (>1)
+        if(col.red > 1){
+            col.red -= floor(col.red);
+        }
+        if(col.green > 1){
+            col.green -= floor(col.green);
+        }
+        if(col.blue > 1){
+            col.blue -= floor(col.blue);
+        }
+        return col;
+    }
+
+    Color operator*(const Color &ref){
+        Color col;
+        col.red = this->red * ref.red;
+        col.green = this->green * ref.green;
+        col.blue = this->blue * ref.blue;
+        return col;
+    }
+
     virtual ~Color() {
 
     }
@@ -153,6 +180,10 @@ public:
             const Color &ambient , const Color &diffuse , const Color &specular): points(points) , faces(faces) ,
                           ambientReflection(ambient) , diffuseReflection(diffuse)  , specularReflection(specular) ,
                           reflectionCoefficient(0){}
+    Figure(const vector<Vector3D> &points, const vector<Face> &faces,
+            const vector<double > &ambient , const vector<double> &diffuse , const vector<double> &specular) :
+            points(points) , faces(faces) ,
+            ambientReflection(ambient) , diffuseReflection(diffuse) , specularReflection(specular) {}
 
     Figure(Figure* refFig) : points(refFig->points) , faces(refFig->faces) ,
             ambientReflection(refFig->ambientReflection) , diffuseReflection(refFig->diffuseReflection),
@@ -665,7 +696,7 @@ Point2D doProjection(const Vector3D &point , const double d){
     return Point2D(x_1 , y_1);
 }
 
-void getLinePointIndex(Face &face, Figure* &f, Lines2D &lines , const double d){
+void getLinePointIndex(Face &face, Figure* &f, Lines2D &lines , Color &lineColor , const double d){
     // Create new variables
     int b_index = 0;
     int e_index = 0;
@@ -680,7 +711,7 @@ void getLinePointIndex(Face &face, Figure* &f, Lines2D &lines , const double d){
         Point2D newBeginP = doProjection(beginP, d);
         Point2D newEndP = doProjection(endP, d);
         // Create new line
-        Line2D newLine(newBeginP, newEndP, f->color , beginP.z , endP.z);
+        Line2D newLine(newBeginP, newEndP, lineColor , beginP.z , endP.z);
         //newLine.z1 = beginP.z;
         //newLine.z2 = endP.z;
         lines.push_back(newLine);
@@ -689,10 +720,12 @@ void getLinePointIndex(Face &face, Figure* &f, Lines2D &lines , const double d){
 
 Lines2D doProjection(Figures3D &figs , const double d){
     Lines2D lines;
+    Color color;
     for(Figure* f : figs){
+        color = f->ambientReflection + f->diffuseReflection + f->specularReflection;
         for(Face face : f->faces){
             // Get points index - loop through
-            getLinePointIndex(face, f, lines , d);
+            getLinePointIndex(face, f, lines , color , d);
         }
     }
     return lines;
@@ -700,7 +733,7 @@ Lines2D doProjection(Figures3D &figs , const double d){
 
 // Session 3: Figures - Platonic bodies
 
-Figure* createCube(vector<double>&lineColor){
+Figure* createCube(vector<double>&ambientCoeff , vector<double> &diffuseCoeff , vector<double> &specularCoeff){
     // Points array
     double Points_T [3][8] = {
             { 1 , -1 , 1 , -1 , 1 , -1 , 1 , -1 },
@@ -726,11 +759,11 @@ Figure* createCube(vector<double>&lineColor){
     }
     // Create new figure
     Figure* newCube;
-    newCube = new Figure( points , faces , Color( lineColor.at(0) , lineColor.at(1) , lineColor.at(2) ) );
+    newCube = new Figure( points , faces , ambientCoeff , diffuseCoeff , specularCoeff );
     return newCube;
 }
 
-Figure* createTetrahedron(vector<double>&lineColor){
+Figure* createTetrahedron(vector<double>&ambientCoeff , vector<double> &diffuseCoeff , vector<double> &specularCoeff){
     // Points array
     double Points_T [3][4] = {
             { 1 , -1 , 1 , -1 },
@@ -755,11 +788,11 @@ Figure* createTetrahedron(vector<double>&lineColor){
     }
     // Create new figure
     Figure* newTetra;
-    newTetra = new Figure( points , faces , Color( lineColor.at(0) , lineColor.at(1) , lineColor.at(2) ) );
+    newTetra = new Figure( points , faces , ambientCoeff , diffuseCoeff , specularCoeff );
     return newTetra;
 }
 
-Figure* createOctahedron(vector<double>&lineColor){
+Figure* createOctahedron(vector<double>&ambientCoeff , vector<double> &diffuseCoeff , vector<double> &specularCoeff){
     // Points array
     double Points_T [3][6] = {
             { 1 , 0 ,-1 , 0 , 0 , 0 },
@@ -784,11 +817,11 @@ Figure* createOctahedron(vector<double>&lineColor){
     }
     // Create new figure
     Figure* newOcta;
-    newOcta = new Figure( points , faces , Color( lineColor.at(0) , lineColor.at(1) , lineColor.at(2) ) );
+    newOcta = new Figure( points , faces , ambientCoeff , diffuseCoeff , specularCoeff );
     return newOcta;
 }
 
-Figure* createIcosahedron(vector<double>&lineColor){
+Figure* createIcosahedron(vector<double>&ambientCoeff , vector<double> &diffuseCoeff , vector<double> &specularCoeff){
     // Points array
     double Points_T [3][12];
     Points_T[0][0] = 0;
@@ -830,11 +863,11 @@ Figure* createIcosahedron(vector<double>&lineColor){
     }
     // Create new figure
     Figure* newIso;
-    newIso = new Figure( points , faces , Color( lineColor.at(0) , lineColor.at(1) , lineColor.at(2) ) );
+    newIso = new Figure( points , faces , ambientCoeff , diffuseCoeff , specularCoeff );
     return newIso;
 }
 
-Figure* createDodecahedron(vector<double>&lineColor){
+Figure* createDodecahedron(vector<double>&ambientCoeff , vector<double> &diffuseCoeff , vector<double> &specularCoeff){
     // Points array
     double Points_T [3][20];
     // Faces array
@@ -846,7 +879,7 @@ Figure* createDodecahedron(vector<double>&lineColor){
             { 4 , 1 , 2 , 3 , 4 , 0 , 15 , 18 , 17 , 16 , 15 , 19 }
     };
     // Create dodecahedron
-    Figure* newICO = createIcosahedron(lineColor);
+    Figure* newICO = createIcosahedron(ambientCoeff , diffuseCoeff , specularCoeff);
     int count = 0;
     for (Face f : newICO->faces){
         Vector3D p4 = Vector3D::point(0 , 0 , 0);
@@ -871,7 +904,7 @@ Figure* createDodecahedron(vector<double>&lineColor){
     }
     // Create new figure
     Figure* newDodeca;
-    newDodeca = new Figure( points , faces , Color( lineColor.at(0) , lineColor.at(1) , lineColor.at(2) ) );
+    newDodeca = new Figure( points , faces , ambientCoeff , diffuseCoeff , specularCoeff );
     return newDodeca;
 }
 
@@ -904,9 +937,9 @@ void splitTriangle(Face &originalTriangle , Figure* &originalFigure , vector<Fac
 
 }
 
-Figure* createSphere(const double &radius , const int &n , vector<double>&lineColor){
+Figure* createSphere(const double &radius , const int &n , vector<double>&ambientCoeff , vector<double> &diffuseCoeff , vector<double> &specularCoeff){
     // Create an icosahedron
-    Figure* newIcoSphere = createIcosahedron(lineColor);
+    Figure* newIcoSphere = createIcosahedron(ambientCoeff , diffuseCoeff , specularCoeff);
     // Create temporary faces vector
     vector<Face>newFaces;
 
@@ -928,7 +961,8 @@ Figure* createSphere(const double &radius , const int &n , vector<double>&lineCo
     return newIcoSphere;
 }
 
-Figure* createCone(vector<double> &lineColor , const int &n , const double &height){
+Figure* createCone(const int &n , const double &height ,
+                    vector<double>&ambientCoeff , vector<double> &diffuseCoeff , vector<double> &specularCoeff){
     // Create points
     vector<Vector3D> points;
     for (int i = 0; i < n + 1; ++i) {
@@ -956,11 +990,12 @@ Figure* createCone(vector<double> &lineColor , const int &n , const double &heig
     }
     // Create new figure
     Figure* newCone;
-    newCone = new Figure(points , faces , Color( lineColor.at(0) , lineColor.at(1) , lineColor.at(2) ) );
+    newCone = new Figure( points , faces , ambientCoeff , diffuseCoeff , specularCoeff );
     return newCone;
 }
 
-Figure* createCylinder(vector<double> &lineColor , const int &n , const double &height){
+Figure* createCylinder(const int &n , const double &height ,
+                        vector<double>&ambientCoeff , vector<double> &diffuseCoeff , vector<double> &specularCoeff){
     // Create points
     vector<Vector3D> points;
     vector<int> bottom_indexes;
@@ -993,11 +1028,12 @@ Figure* createCylinder(vector<double> &lineColor , const int &n , const double &
     faces.emplace_back(top_indexes);
     // Make new figure
     Figure* newFigure;
-    newFigure = new Figure(points , faces , Color(lineColor.at(0) , lineColor.at(1) , lineColor.at(2) ) );
+    newFigure = new Figure( points , faces , ambientCoeff , diffuseCoeff , specularCoeff );
     return newFigure;
 }
 
-Figure* createTorus(const double &r , const double &R , const int &n , const int &m , vector<double> &lineColor){
+Figure* createTorus(const double &r , const double &R , const int &n , const int &m ,
+                    vector<double>&ambientCoeff , vector<double> &diffuseCoeff , vector<double> &specularCoeff){
     // Create points vector
     vector<Vector3D> points;
     // Create all the points
@@ -1027,7 +1063,7 @@ Figure* createTorus(const double &r , const double &R , const int &n , const int
     }
     // Create new figure
     Figure* newFigure;
-    newFigure = new Figure( points , faces , Color( lineColor.at(0) , lineColor.at(1) , lineColor.at(2) ) );
+    newFigure = new Figure( points , faces , ambientCoeff , diffuseCoeff , specularCoeff );
     return newFigure;
 }
 
@@ -1148,13 +1184,13 @@ void splitTriangleHexagon(Face &originalTriangle , Figure* &originalFigure , vec
     insertToPentagon(index_C , index_H , index_G , H , G , pentagons , newPoints);
 }
 
-Figure* createBuckyBall(vector<double> &lineColor){
+Figure* createBuckyBall(vector<double>&ambientCoeff , vector<double> &diffuseCoeff , vector<double> &specularCoeff){
     /*
      * Een voetbal die bestaat uit 20 zeshoeken en 12 vijfhoeken.
      * Elk van de 20 driehoeken van de icosahedron op te delen in eengelijkzijdige zeshoek en drie driehoeken.
      */
     // Create an icosahedron
-    Figure* newIcoSphere = createIcosahedron(lineColor);
+    Figure* newIcoSphere = createIcosahedron(ambientCoeff , diffuseCoeff , specularCoeff);
     // Create temporary faces vector
     vector<Face>newFaces;
     // Create temporary points vector
@@ -1182,10 +1218,11 @@ Figure* createBuckyBall(vector<double> &lineColor){
 
 }
 
-Figures3D createMengerSponge(vector<double> &lineColor , int nr_Iterations , Matrix &m ){
+Figures3D createMengerSponge(int nr_Iterations , Matrix &m , vector<double>&ambientCoeff , vector<double> &diffuseCoeff , vector<double> &specularCoeff){
     // Start with cube
     Figures3D newSponge;
-    Figure* newFig = createCube(lineColor);
+    Figure* newFig = createCube(ambientCoeff , diffuseCoeff , specularCoeff);
+    Figure* newMid;
     newFig->applyTransformation(m);
     newSponge.push_back(newFig);
     // Divide every face into nine squares
@@ -1212,15 +1249,10 @@ Figures3D createMengerSponge(vector<double> &lineColor , int nr_Iterations , Mat
                 // Add figure to list of fractals
                 newFractal.push_back(newFig);
             }
-            // For each new figure made
-            for(int k = 0; k < 4; k++){
-                // Copy the original figure
-                newFig = new Figure(newFractal.at(k));
-                // Scale the figure
-                newFig->applyTransformation(m_s);
-                // Get translation matrix
-                newFig->applyTransformation(m_t);
-                newFractal.push_back(newFig);
+            for(auto &f : newFractal){
+                // New figure and translate from last point in face to the one before
+                newMid = new Figure(f);
+                // If first element: translate with (first - last)777777
             }
         }
         newSponge = newFractal;
@@ -1483,6 +1515,12 @@ Figure* drawLineDrawing(double &scale , double &rotX , double &rotY , double &ro
 
 Figures3D drawWireframe(int &size , vector<double> &eye , vector<double> &backgroundcolor , int &nrFigures ,
         const ini::Configuration &configuration , Lights3D &lights ){
+    // Check if lighting
+    string type = configuration["General"]["type"];
+    vector<double> ambientCoefficient;
+    vector<double> diffuseCoefficient;
+    vector<double> specularCoefficient;
+    bool lighting = (type == "LightedZBuffering");
     // Check for view fustrum
     bool viewFustrum = configuration["General"]["clipping"].as_bool_or_default(false);
     Vector3D viewDir;
@@ -1523,7 +1561,17 @@ Figures3D drawWireframe(int &size , vector<double> &eye , vector<double> &backgr
         double rotY = configuration["Figure"+to_string(i)]["rotateY"].as_double_or_default(0);
         double rotZ = configuration["Figure"+to_string(i)]["rotateZ"].as_double_or_default(0);
         vector<double> center = configuration["Figure"+to_string(i)]["center"].as_double_tuple_or_default({0,0,0});
-        vector<double> lineColor = configuration["Figure"+to_string(i)]["color"].as_double_tuple_or_default({0,0,0});
+        if(lighting){
+            ambientCoefficient = configuration["Figure"+to_string(i)]["ambientReflection"].as_double_tuple_or_default({1,1,1});
+            diffuseCoefficient = configuration["Figure"+to_string(i)]["diffuseReflection"].as_double_tuple_or_default({0,0,0});
+            specularCoefficient = configuration["Figure"+to_string(i)]["specularReflection"].as_double_tuple_or_default({0,0,0});
+        }
+        else{
+            ambientCoefficient = configuration["Figure"+to_string(i)]["color"];
+            diffuseCoefficient = {0,0,0};
+            specularCoefficient = {0,0,0};
+        }
+
 
         Matrix m = scaleFigure(scale);
         m *= rotateX((rotX * M_PI) / 180);
@@ -1539,7 +1587,7 @@ Figures3D drawWireframe(int &size , vector<double> &eye , vector<double> &backgr
             int nrLines = configuration["Figure"+to_string(i)]["nrLines"].as_int_or_die();
             // Create new LineDrawing figure
             Figure* newFigure = drawLineDrawing(scale , rotX , rotY , rotZ , nrPoints , nrLines , configuration ,
-                                               lineColor , center , m_eye , i);
+                                               ambientCoefficient , center , m_eye , i);
             // Add figure to vector of figures
             figures.push_back(newFigure);
         }
@@ -1547,7 +1595,7 @@ Figures3D drawWireframe(int &size , vector<double> &eye , vector<double> &backgr
         else if (figure_type == "Cube"){
             // Create new figure
             Figure* newFigure;
-            newFigure = createCube(lineColor);
+            newFigure = createCube(ambientCoefficient , diffuseCoefficient , specularCoefficient);
             newFigure->applyTransformation(m);
             figures.push_back(newFigure);
         }
@@ -1555,7 +1603,7 @@ Figures3D drawWireframe(int &size , vector<double> &eye , vector<double> &backgr
         else if (figure_type == "Tetrahedron"){
             // Create new figure
             Figure* newFigure;
-            newFigure = createTetrahedron(lineColor);
+            newFigure = createTetrahedron(ambientCoefficient , diffuseCoefficient , specularCoefficient);
             newFigure->applyTransformation(m);
             figures.push_back(newFigure);
         }
@@ -1563,7 +1611,7 @@ Figures3D drawWireframe(int &size , vector<double> &eye , vector<double> &backgr
         else if (figure_type == "Octahedron"){
             // Create new figure
             Figure* newFigure;
-            newFigure = createOctahedron(lineColor);
+            newFigure = createOctahedron(ambientCoefficient , diffuseCoefficient , specularCoefficient);
             newFigure->applyTransformation(m);
             figures.push_back(newFigure);
         }
@@ -1571,7 +1619,7 @@ Figures3D drawWireframe(int &size , vector<double> &eye , vector<double> &backgr
         else if (figure_type == "Icosahedron"){
             // Create new figure
             Figure* newFigure;
-            newFigure = createIcosahedron(lineColor);
+            newFigure = createIcosahedron(ambientCoefficient , diffuseCoefficient , specularCoefficient);
             newFigure->applyTransformation(m);
             figures.push_back(newFigure);
         }
@@ -1579,7 +1627,7 @@ Figures3D drawWireframe(int &size , vector<double> &eye , vector<double> &backgr
         else if (figure_type == "Dodecahedron"){
             // Create new figure
             Figure* newFigure;
-            newFigure = createDodecahedron(lineColor);
+            newFigure = createDodecahedron(ambientCoefficient , diffuseCoefficient , specularCoefficient);
             newFigure->applyTransformation(m);
             figures.push_back(newFigure);
         }
@@ -1588,7 +1636,7 @@ Figures3D drawWireframe(int &size , vector<double> &eye , vector<double> &backgr
             int n = configuration["Figure"+to_string(i)]["n"].as_int_or_die();
             double height = configuration["Figure"+to_string(i)]["height"].as_double_or_die();
             Figure* newFigure;
-            newFigure = createCone(lineColor , n , height);
+            newFigure = createCone(n , height , ambientCoefficient , diffuseCoefficient , specularCoefficient);
             newFigure->applyTransformation(m);
             figures.push_back(newFigure);
         }
@@ -1597,7 +1645,7 @@ Figures3D drawWireframe(int &size , vector<double> &eye , vector<double> &backgr
             const int n = configuration["Figure"+to_string(i)]["n"].as_int_or_die();
             const double height = configuration["Figure" + to_string(i)]["height"].as_double_or_die();
             Figure* newFigure;
-            newFigure = createCylinder(lineColor , n , height);
+            newFigure = createCylinder(n , height , ambientCoefficient , diffuseCoefficient , specularCoefficient);
             newFigure->applyTransformation(m);
             figures.push_back(newFigure);
         }
@@ -1605,7 +1653,7 @@ Figures3D drawWireframe(int &size , vector<double> &eye , vector<double> &backgr
         else if (figure_type == "Sphere"){
             const int n = configuration["Figure"+to_string(i)]["n"].as_int_or_die();
             Figure* newFigure;
-            newFigure = createSphere(1.0 , n , lineColor);
+            newFigure = createSphere(1.0 , n , ambientCoefficient , diffuseCoefficient , specularCoefficient);
             newFigure->applyTransformation(m);
             figures.push_back(newFigure);
         }
@@ -1616,7 +1664,7 @@ Figures3D drawWireframe(int &size , vector<double> &eye , vector<double> &backgr
             int _n = configuration["Figure"+to_string(i)]["n"].as_int_or_die();
             int _m = configuration["Figure"+to_string(i)]["m"].as_int_or_die();
             Figure* newFigure;
-            newFigure = createTorus( _r , _R , _n , _m , lineColor);
+            newFigure = createTorus( _r , _R , _n , _m , ambientCoefficient , diffuseCoefficient , specularCoefficient);
             newFigure->applyTransformation(m);
             figures.push_back(newFigure);
         }
@@ -1629,28 +1677,28 @@ Figures3D drawWireframe(int &size , vector<double> &eye , vector<double> &backgr
             input_stream >> l_system;
             input_stream.close();
             Figure* newFigure;
-            newFigure = drawSystem3D(l_system , size , backgroundcolor , lineColor);
+            newFigure = drawSystem3D(l_system , size , backgroundcolor , ambientCoefficient);
             newFigure->applyTransformation(m);
             figures.push_back(newFigure);
         }
         // Figure_type == "BuckyBall"
         else if (figure_type == "BuckyBall"){
             Figure* newFigure;
-            newFigure = createBuckyBall(lineColor);
+            newFigure = createBuckyBall(ambientCoefficient , diffuseCoefficient , specularCoefficient);
             newFigure->applyTransformation(m);
             figures.push_back(newFigure);
         }
         // Figure_type = "MengerSponge"
         else if (figure_type == "MengerSponge"){
             int nr_Iterations = configuration["Figure"+to_string(i)]["nrIterations"].as_int_or_default(0);
-            Figures3D newSponge = createMengerSponge(lineColor , nr_Iterations , m);
+            Figures3D newSponge = createMengerSponge(nr_Iterations , m , ambientCoefficient , diffuseCoefficient , specularCoefficient);
             figures.insert(figures.end() , newSponge.begin() , newSponge.end());
         }
         // Figure_type == "FractalCube"
         else if(figure_type == "FractalCube"){
             int nr_Iterations = configuration["Figure"+to_string(i)]["nrIterations"].as_int_or_default(0);
             double fractal_scale = configuration["Figure"+to_string(i)]["fractalScale"].as_double_or_default(1);
-            Figure* newFigure = createCube(lineColor);
+            Figure* newFigure = createCube(ambientCoefficient , diffuseCoefficient , specularCoefficient);
             newFigure->applyTransformation(m);
             Figures3D newFractal = {newFigure};
             generateFractal(newFractal , nr_Iterations , fractal_scale);
@@ -1660,7 +1708,7 @@ Figures3D drawWireframe(int &size , vector<double> &eye , vector<double> &backgr
         else if(figure_type == "FractalTetrahedron"){
             int nr_Iterations = configuration["Figure"+to_string(i)]["nrIterations"].as_int_or_default(0);
             double fractal_scale = configuration["Figure"+to_string(i)]["fractalScale"].as_double_or_default(1);
-            Figure* newFigure = createTetrahedron(lineColor);
+            Figure* newFigure = createTetrahedron(ambientCoefficient , diffuseCoefficient , specularCoefficient);
             newFigure->applyTransformation(m);
             Figures3D newFractal = {newFigure};
             generateFractal(newFractal , nr_Iterations , fractal_scale);
@@ -1670,7 +1718,7 @@ Figures3D drawWireframe(int &size , vector<double> &eye , vector<double> &backgr
         else if(figure_type == "FractalIcosahedron"){
             int nr_Iterations = configuration["Figure"+to_string(i)]["nrIterations"].as_int_or_default(0);
             double fractal_scale = configuration["Figure"+to_string(i)]["fractalScale"].as_double_or_default(1);
-            Figure* newFigure = createIcosahedron(lineColor);
+            Figure* newFigure = createIcosahedron(ambientCoefficient , diffuseCoefficient , specularCoefficient);
             newFigure->applyTransformation(m);
             Figures3D newFractal = {newFigure};
             generateFractal(newFractal , nr_Iterations , fractal_scale);
@@ -1680,7 +1728,7 @@ Figures3D drawWireframe(int &size , vector<double> &eye , vector<double> &backgr
         else if(figure_type == "FractalOctahedron"){
             int nr_Iterations = configuration["Figure"+to_string(i)]["nrIterations"].as_int_or_default(0);
             double fractal_scale = configuration["Figure"+to_string(i)]["fractalScale"].as_double_or_default(1);
-            Figure* newFigure = createOctahedron(lineColor);
+            Figure* newFigure = createOctahedron(ambientCoefficient , diffuseCoefficient , specularCoefficient);
             newFigure->applyTransformation(m);
             Figures3D newFractal = {newFigure};
             generateFractal(newFractal , nr_Iterations , fractal_scale);
@@ -1690,7 +1738,7 @@ Figures3D drawWireframe(int &size , vector<double> &eye , vector<double> &backgr
         else if(figure_type == "FractalDodecahedron"){
             int nr_Iterations = configuration["Figure"+to_string(i)]["nrIterations"].as_int_or_default(0);
             double fractal_scale = configuration["Figure"+to_string(i)]["fractalScale"].as_double_or_default(1);
-            Figure* newFigure = createDodecahedron(lineColor);
+            Figure* newFigure = createDodecahedron(ambientCoefficient , diffuseCoefficient , specularCoefficient);
             newFigure->applyTransformation(m);
             Figures3D newFractal = {newFigure};
             generateFractal(newFractal , nr_Iterations , fractal_scale);
@@ -1700,7 +1748,7 @@ Figures3D drawWireframe(int &size , vector<double> &eye , vector<double> &backgr
         else if(figure_type == "FractalBuckyBall"){
             int nr_Iterations = configuration["Figure"+to_string(i)]["nrIterations"].as_int_or_default(0);
             double fractal_scale = configuration["Figure"+to_string(i)]["fractalScale"].as_double_or_default(1);
-            Figure* newFigure = createBuckyBall(lineColor);
+            Figure* newFigure = createBuckyBall(ambientCoefficient , diffuseCoefficient , specularCoefficient);
             newFigure->applyTransformation(m);
             Figures3D newFractal = {newFigure};
             generateFractal(newFractal , nr_Iterations , fractal_scale);
@@ -1952,7 +2000,15 @@ void draw_zbuf_triag(ZBuffer &zbuf , img::EasyImage &image ,
         Color &ambientReflection , Color &diffuseReflection , Color &specularReflection , double &reflectionCoeff ,
         Lights3D &lights ){
     // Convert color
-    img::Color newColor = img::Color(lround(color.red * 255) , lround(color.green * 255) , lround(color.blue * 255));
+    Color temp;
+    Color newCol;
+    for(auto &l : lights){
+        temp = l->ambientLight * ambientReflection;
+        newCol.red += temp.red;
+        newCol.green += temp.green;
+        newCol.blue += temp.blue;
+    }
+    img::Color newColor = img::Color(lround(newCol.red * 255) , lround(newCol.green * 255) , lround(newCol.blue * 255));
     // Projection of the triangle
     Point2D newA = doProjection(A , d);
     newA.x += dx;
@@ -2020,9 +2076,12 @@ void draw_zbuf_triag(ZBuffer &zbuf , img::EasyImage &image ,
 
 }
 
-img::EasyImage draw2DZbuffTriag (const int &size , vector<double> &backgroundColor , Figures3D &figures){
+img::EasyImage draw2DZbuffTriag (const int &size , vector<double> &backgroundColor , Figures3D &figures , Lights3D &lights){
     // Scale colors
     vector<unsigned int> bgColor = scaleColors(backgroundColor);
+    Color ambient;
+    Color diffuse;
+    Color specular;
     // Triangulate : get the new faces
     vector<Face> newFaces;
     for(auto &fig : figures){
@@ -2055,6 +2114,12 @@ img::EasyImage draw2DZbuffTriag (const int &size , vector<double> &backgroundCol
     double dy = imageHeight / 2 - DC_y;
     // Apply the z-buffering algorithm
     for (auto &fig : figures) {
+        // r_a
+        ambient = fig->ambientReflection;
+        // rd_d
+        diffuse = fig->diffuseReflection;
+        // r_s
+        specular = fig->specularReflection;
         for(auto &f : fig->faces){
             // Get the point indexes
             int ind_A = f.point_indexes.at(0);
@@ -2062,7 +2127,7 @@ img::EasyImage draw2DZbuffTriag (const int &size , vector<double> &backgroundCol
             int ind_C = f.point_indexes.at(2);
             // Apply z-buffering algorithm
             draw_zbuf_triag(zBuffer , image , fig->points.at(ind_A) , fig->points.at(ind_B) , fig->points.at(ind_C) ,
-                    d , dx , dy , fig->color);
+                            d , dx , dy , ambient , diffuse , specular , fig->reflectionCoefficient , lights);
         }
     }
     return image;
@@ -2095,7 +2160,8 @@ img::EasyImage generate_image(const ini::Configuration &configuration)
         vector<double> backgroundcolor = configuration["General"]["backgroundcolor"].as_double_tuple_or_die();
         int nrFigures = configuration["General"]["nrFigures"].as_int_or_die();
         // Draw the wireframe
-        Lights3D lights = {};
+        Light* newLight = new Light(Light(Color(1.0,1.0,1.0) , Color(0,0,0) , Color(0,0,0)));
+        Lights3D lights = {newLight};
         Figures3D figures = drawWireframe(size , eye , backgroundcolor , nrFigures , configuration , lights);
         Lines2D lines = doProjection(figures , 1.0);
         return draw2DLines(lines ,
@@ -2109,7 +2175,8 @@ img::EasyImage generate_image(const ini::Configuration &configuration)
         vector<double> backgroundcolor = configuration["General"]["backgroundcolor"].as_double_tuple_or_die();
         int nrFigures = configuration["General"]["nrFigures"].as_int_or_die();
         // Draw the wireframe
-        Lights3D lights = {};
+        Light* newLight = new Light(Light(Color(1.0,1.0,1.0) , Color(0,0,0) , Color(0,0,0)));
+        Lights3D lights = {newLight};
         Figures3D figures = drawWireframe(size , eye , backgroundcolor , nrFigures , configuration , lights);
         Lines2D lines = doProjection(figures , 1.0);
         // Draw the lines
@@ -2123,9 +2190,10 @@ img::EasyImage generate_image(const ini::Configuration &configuration)
         vector<double> backgroundcolor = configuration["General"]["backgroundcolor"].as_double_tuple_or_die();
         int nrFigures = configuration["General"]["nrFigures"].as_int_or_die();
         // Draw the wireframe
-        Lights3D lights = {};
+        Light* newLight = new Light(Light(Color(1.0,1.0,1.0) , Color(0,0,0) , Color(0,0,0)));
+        Lights3D lights = {newLight};
         Figures3D figures = drawWireframe(size , eye , backgroundcolor , nrFigures , configuration , lights);
-        return draw2DZbuffTriag(size , backgroundcolor , figures);
+        return draw2DZbuffTriag(size , backgroundcolor , figures , lights);
     }
     // Case: type == "LightedZBuffering"
     else if(type == "LightedZBuffering"){
@@ -2135,26 +2203,33 @@ img::EasyImage generate_image(const ini::Configuration &configuration)
         vector<double> backgroundcolor = configuration["General"]["backgroundcolor"].as_double_tuple_or_die();
         int nrFigures = configuration["General"]["nrFigures"].as_int_or_die();
         int nrLights = configuration["General"]["nrLights"].as_int_or_default(0);
+        // Get all the lights
         Lights3D lights;
         Light* newLight;
+        // Ambient light
         vector<double> newAmbient;
         Color AmbientColor;
+        // Diffuse light
         vector<double> newDiffuse;
         Color DiffuseColor;
+        // Specular light
         vector<double> newSpecular;
         Color SpecularColor;
         for (int i = 0; i < nrLights; ++i) {
             newAmbient = configuration["Light" + to_string(i)]["ambientLight"].as_double_tuple_or_default({1,1,1});
             AmbientColor = Color(newAmbient);
+
             newDiffuse = configuration["Light" + to_string(i)]["diffuseLight"].as_double_tuple_or_default({0,0,0});
             DiffuseColor = Color(newDiffuse);
+
             newSpecular = configuration["Light" + to_string(i)]["specularLight"].as_double_tuple_or_default({0,0,0});
             SpecularColor = Color(newSpecular);
+
             newLight = new Light(AmbientColor , DiffuseColor , SpecularColor);
             lights.push_back(newLight);
         }
         Figures3D figures = drawWireframe(size , eye , backgroundcolor , nrFigures , configuration , lights);
-        return draw2DZbuffTriag(size , backgroundcolor , figures);
+        return draw2DZbuffTriag(size , backgroundcolor , figures , lights);
     }
 
 
