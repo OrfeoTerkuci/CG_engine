@@ -283,6 +283,11 @@ public:
     PointLight(const Color &ambientLight, const Color &diffuseLight, const Color &specularLight,
                const Vector3D &location, double spotAngle) : Light(ambientLight, diffuseLight, specularLight),
                                                              location(location), spotAngle(spotAngle) {}
+
+    PointLight(const Color &ambientLight, const Color &diffuseLight, const Color &specularLight,
+               vector<double> &location, double spotAngle) : Light(ambientLight, diffuseLight, specularLight),
+                location(Vector3D::point(location.at(0),location.at(1),location.at(2))), spotAngle(spotAngle) {}
+
 };
 
 // Declare new types
@@ -2069,6 +2074,10 @@ void draw_zbuf_triag(ZBuffer &zbuf , img::EasyImage &image ,
                 newCol = newCol + temp;
             }
         }
+        auto pnt_l = dynamic_cast<PointLight*>(l);
+        if(pnt_l != nullptr){
+            double angle;
+        }
     }
     img::Color newColor = img::Color(lround(newCol.red * 255) , lround(newCol.green * 255) , lround(newCol.blue * 255));
     // Projection of the triangle
@@ -2122,6 +2131,22 @@ void draw_zbuf_triag(ZBuffer &zbuf , img::EasyImage &image ,
         for (int j = x_l; j <= x_r; ++j) {
             // Determine the inv_z value
             inv_z = 1.0001 * inv_z_G + (j - G.x) * dzdx + (i - G.y) * dzdy;
+            // Get point light color
+            for(auto* l : lights){
+                auto pnt_l = dynamic_cast<PointLight*>(l);
+                if(pnt_l != nullptr){
+                    double x = - j / (inv_z * d);
+                    double y = - i / (inv_z * d);
+                    Vector3D p = Vector3D::point(x , y , 1/inv_z);
+                    Vector3D l_v = pnt_l->location - p;
+                    double angle = Vector3D::dot(l_v , w);
+                    if(angle > 0){
+                        temp = (l->diffuseLight * diffuseReflection) * angle;
+                        newCol = newCol + temp;
+                    }
+                    newColor = img::Color(lround(newCol.red * 255) , lround(newCol.green * 255) , lround(newCol.blue * 255));
+                }
+            }
             if(inv_z < zbuf[j][i]){
                 zbuf[j][i] = inv_z;
                 image(j,i) = newColor;
@@ -2274,7 +2299,8 @@ img::EasyImage generate_image(const ini::Configuration &configuration)
         // Diffuse light
         bool isDiffuse;
         bool infty;
-        vector<double> col_dir;
+        double spotAngle;
+        vector<double> dir_point;
         vector<double> newDiffuse;
         Color DiffuseColor;
         // Specular light
@@ -2289,19 +2315,22 @@ img::EasyImage generate_image(const ini::Configuration &configuration)
             SpecularColor = Color(newSpecular);
             // Diffuse components
             infty = configuration["Light" + to_string(i)]["infinity"].as_bool_if_exists(isDiffuse);
-            if(isDiffuse){
-                if(infty){
+            if(infty){
+                if(isDiffuse){
                     // Diffuse on infinity
-                    col_dir = configuration["Light" + to_string(i)]["direction"].as_double_tuple_or_die();
+                    dir_point = configuration["Light" + to_string(i)]["direction"].as_double_tuple_or_die();
                     newDiffuse = configuration["Light" + to_string(i)]["diffuseLight"].as_double_tuple_or_default({0,0,0});
                     DiffuseColor = Color(newDiffuse);
-                    lights.push_back(new InfLight(AmbientColor , DiffuseColor , SpecularColor , col_dir ));
+                    lights.push_back(new InfLight(AmbientColor , DiffuseColor , SpecularColor , dir_point ));
                     continue;
                 }
                 else{
                     // Diffuse with spotlight
+                    // Position of spotlight in real coordinates
+                    dir_point = configuration["Light" + to_string(i)]["location"].as_double_tuple_or_default({0,0,0});
+                    spotAngle = configuration["Light" + to_string(i)]["spotAngle"].as_double_or_default(90.0);
                     newDiffuse = {0,0,0};
-                    lights.push_back(new Light(AmbientColor , DiffuseColor , SpecularColor) );
+                    lights.push_back(new PointLight(AmbientColor , DiffuseColor , SpecularColor , dir_point , spotAngle) );
                 }
             }
             else{
