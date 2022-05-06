@@ -66,6 +66,16 @@ public:
         col.red = this->red * ref.red;
         col.green = this->green * ref.green;
         col.blue = this->blue * ref.blue;
+        // Correct overshoot (>1)
+        if(col.red > 1){
+            col.red -= floor(col.red);
+        }
+        if(col.green > 1){
+            col.green -= floor(col.green);
+        }
+        if(col.blue > 1){
+            col.blue -= floor(col.blue);
+        }
         return col;
     }
 
@@ -184,20 +194,18 @@ class Figure {
 public:
     vector<Vector3D> points;
     vector<Face> faces;
+
     Color ambientReflection;
     Color diffuseReflection;
     Color specularReflection;
-    double reflectionCoefficient;
 
     Figure(const vector<Vector3D> &points, const vector<Face> &faces, const Color &color) : points(points),
                                                                                             faces(faces),
-                    ambientReflection(color) , diffuseReflection(Color(0,0,0))  , specularReflection(Color(0,0,0)) ,
-                    reflectionCoefficient(0){}
+                    ambientReflection(color) , diffuseReflection(Color(0,0,0))  , specularReflection(Color(0,0,0)) {}
 
     Figure(const vector<Vector3D> &points, const vector<Face> &faces,
             const Color &ambient , const Color &diffuse , const Color &specular): points(points) , faces(faces) ,
-                          ambientReflection(ambient) , diffuseReflection(diffuse)  , specularReflection(specular) ,
-                          reflectionCoefficient(0){}
+                          ambientReflection(ambient) , diffuseReflection(diffuse)  , specularReflection(specular) {}
     Figure(const vector<Vector3D> &points, const vector<Face> &faces,
             const vector<double > &ambient , const vector<double> &diffuse , const vector<double> &specular) :
             points(points) , faces(faces) ,
@@ -205,7 +213,7 @@ public:
 
     Figure(Figure* refFig) : points(refFig->points) , faces(refFig->faces) ,
             ambientReflection(refFig->ambientReflection) , diffuseReflection(refFig->diffuseReflection),
-            specularReflection(refFig->specularReflection) , reflectionCoefficient(refFig->reflectionCoefficient){}
+            specularReflection(refFig->specularReflection) {}
 
     void applyTransformation(const Matrix &m){
         // Multiply each vector with the matrix
@@ -246,6 +254,10 @@ public:
 
     Light(const Color &ambientLight, const Color &diffuseLight, const Color &specularLight) : ambientLight(
             ambientLight), diffuseLight(diffuseLight), specularLight(specularLight) {}
+
+    virtual ~Light() {
+
+    }
 };
 
 class InfLight: public Light{
@@ -259,13 +271,6 @@ public:
     InfLight(const Color &ambientLight, const Color &diffuseLight, const Color &specularLight, vector<double> &ldVec)
             : Light(ambientLight, diffuseLight, specularLight) , ldVector( Vector3D::vector( ldVec.at(0),ldVec.at(1),ldVec.at(2) ) ){}
 
-    const Vector3D &getLdVector() const {
-        return ldVector;
-    }
-
-    void setLdVector(const Vector3D &ldVector) {
-        InfLight::ldVector = ldVector;
-    }
 };
 
 class PointLight: public Light{
@@ -1584,6 +1589,14 @@ Figures3D drawWireframe(int &size , vector<double> &eye , vector<double> &backgr
         viewDir = -eyePoint;
     }
     Matrix m_eye = eyePointTrans(eyePoint , viewDir , theta , phi , r);
+    // Transform the lights
+    for(auto* l : lights){
+        auto inf_l = dynamic_cast<InfLight*>(l);
+        if(inf_l != nullptr){
+            inf_l->ldVector *= m_eye;
+            inf_l->ldVector.normalise();
+        }
+    }
     // Create figures vector
     Figures3D figures;
     // Get figures
@@ -2028,30 +2041,34 @@ double calculateIntersection( const int& y_i ,  Point2D const &P , Point2D const
     return Q.x + ( P.x - Q.x ) * ( ( y_i - Q.y ) / ( P.y - Q.y ) );
 }
 
-double getAngle(Vector3D &A , Vector3D &B , Vector3D& C , Vector3D &direction){
-    Vector3D n = Vector3D::cross( ( B - A ) , ( C - A ) );
+double getAngle(const Vector3D &A ,const Vector3D &B ,const Vector3D &C , const Vector3D &direction){
+    Vector3D n = Vector3D::cross(B - A , C - A);
     n.normalise();
-    Vector3D l = - direction / direction.length() ;
+    Vector3D l = -direction;
     return Vector3D::dot(l , n);
 }
 
 void draw_zbuf_triag(ZBuffer &zbuf , img::EasyImage &image ,
         Vector3D const &A, Vector3D const &B, Vector3D const &C,
         double &d, double &dx, double &dy,
-        Color &ambientReflection , Color &diffuseReflection , Color &specularReflection , double &reflectionCoeff ,
+        Color &ambientReflection , Color &diffuseReflection , Color &specularReflection ,
         Lights3D &lights ){
     // Convert color
     Color temp;
     Color newCol;
-    for(auto &l : lights){
+    for(auto* &l : lights){
         // Get ambient light
         temp = l->ambientLight * ambientReflection;
-        newCol.red += temp.red;
-        newCol.green += temp.green;
-        newCol.blue += temp.blue;
+        newCol = newCol + temp;
         // Get diffuse light
-//        double angle = getAngle(A , B , C);
-        temp = l->diffuseLight * diffuseReflection;
+        auto inf_l = dynamic_cast<InfLight*>(l);
+        if(inf_l != nullptr){
+            double angle = getAngle(A , B , C , inf_l->ldVector);
+            if(angle > 0){
+                temp = (l->diffuseLight * diffuseReflection) * angle;
+                newCol = newCol + temp;
+            }
+        }
     }
     img::Color newColor = img::Color(lround(newCol.red * 255) , lround(newCol.green * 255) , lround(newCol.blue * 255));
     // Projection of the triangle
@@ -2172,7 +2189,7 @@ img::EasyImage draw2DZbuffTriag (const int &size , vector<double> &backgroundCol
             int ind_C = f.point_indexes.at(2);
             // Apply z-buffering algorithm
             draw_zbuf_triag(zBuffer , image , fig->points.at(ind_A) , fig->points.at(ind_B) , fig->points.at(ind_C) ,
-                            d , dx , dy , ambient , diffuse , specular , fig->reflectionCoefficient , lights);
+                            d , dx , dy , ambient , diffuse , specular , lights);
         }
     }
     return image;
@@ -2284,14 +2301,13 @@ img::EasyImage generate_image(const ini::Configuration &configuration)
                 else{
                     // Diffuse with spotlight
                     newDiffuse = {0,0,0};
-                    newLight = new Light(AmbientColor , DiffuseColor , SpecularColor);
+                    lights.push_back(new Light(AmbientColor , DiffuseColor , SpecularColor) );
                 }
             }
             else{
                 newDiffuse = {0,0,0};
-                newLight = new Light(AmbientColor , DiffuseColor , SpecularColor);
+                lights.push_back( new Light(AmbientColor , DiffuseColor , SpecularColor) );
             }
-            lights.push_back(newLight);
         }
         Figures3D figures = drawWireframe(size , eye , backgroundcolor , nrFigures , configuration , lights);
         return draw2DZbuffTriag(size , backgroundcolor , figures , lights);
