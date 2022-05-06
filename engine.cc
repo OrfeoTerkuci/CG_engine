@@ -1563,15 +1563,13 @@ Figures3D drawWireframe(int &size , vector<double> &eye , vector<double> &backgr
         vector<double> center = configuration["Figure"+to_string(i)]["center"].as_double_tuple_or_default({0,0,0});
         if(lighting){
             ambientCoefficient = configuration["Figure"+to_string(i)]["ambientReflection"].as_double_tuple_or_default({1,1,1});
-            diffuseCoefficient = configuration["Figure"+to_string(i)]["diffuseReflection"].as_double_tuple_or_default({0,0,0});
-            specularCoefficient = configuration["Figure"+to_string(i)]["specularReflection"].as_double_tuple_or_default({0,0,0});
+
         }
         else{
             ambientCoefficient = configuration["Figure"+to_string(i)]["color"];
-            diffuseCoefficient = {0,0,0};
-            specularCoefficient = {0,0,0};
         }
-
+        diffuseCoefficient = configuration["Figure"+to_string(i)]["diffuseReflection"].as_double_tuple_or_default({0,0,0});
+        specularCoefficient = configuration["Figure"+to_string(i)]["specularReflection"].as_double_tuple_or_default({0,0,0});
 
         Matrix m = scaleFigure(scale);
         m *= rotateX((rotX * M_PI) / 180);
