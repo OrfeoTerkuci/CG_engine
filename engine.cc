@@ -69,6 +69,24 @@ public:
         return col;
     }
 
+    Color operator*(const double d){
+        Color col;
+        col.red = this->red * d;
+        col.green = this->green * d;
+        col.blue = this->blue * d;
+        // Correct overshoot (>1)
+        if(col.red > 1){
+            col.red -= floor(col.red);
+        }
+        if(col.green > 1){
+            col.green -= floor(col.green);
+        }
+        if(col.blue > 1){
+            col.blue -= floor(col.blue);
+        }
+        return col;
+    }
+
     virtual ~Color() {
 
     }
@@ -234,6 +252,20 @@ class InfLight: public Light{
 public:
     // Direction of lighting
     Vector3D ldVector;
+
+    InfLight(const Color &ambientLight, const Color &diffuseLight, const Color &specularLight, const Vector3D &ldVector)
+            : Light(ambientLight, diffuseLight, specularLight), ldVector(ldVector) {}
+
+    InfLight(const Color &ambientLight, const Color &diffuseLight, const Color &specularLight, vector<double> &ldVec)
+            : Light(ambientLight, diffuseLight, specularLight) , ldVector( Vector3D::vector( ldVec.at(0),ldVec.at(1),ldVec.at(2) ) ){}
+
+    const Vector3D &getLdVector() const {
+        return ldVector;
+    }
+
+    void setLdVector(const Vector3D &ldVector) {
+        InfLight::ldVector = ldVector;
+    }
 };
 
 class PointLight: public Light{
@@ -242,6 +274,10 @@ public:
     Vector3D location;
     // The angle of the spotlight
     double spotAngle;
+
+    PointLight(const Color &ambientLight, const Color &diffuseLight, const Color &specularLight,
+               const Vector3D &location, double spotAngle) : Light(ambientLight, diffuseLight, specularLight),
+                                                             location(location), spotAngle(spotAngle) {}
 };
 
 // Declare new types
@@ -1992,6 +2028,13 @@ double calculateIntersection( const int& y_i ,  Point2D const &P , Point2D const
     return Q.x + ( P.x - Q.x ) * ( ( y_i - Q.y ) / ( P.y - Q.y ) );
 }
 
+double getAngle(Vector3D &A , Vector3D &B , Vector3D& C , Vector3D &direction){
+    Vector3D n = Vector3D::cross( ( B - A ) , ( C - A ) );
+    n.normalise();
+    Vector3D l = - direction / direction.length() ;
+    return Vector3D::dot(l , n);
+}
+
 void draw_zbuf_triag(ZBuffer &zbuf , img::EasyImage &image ,
         Vector3D const &A, Vector3D const &B, Vector3D const &C,
         double &d, double &dx, double &dy,
@@ -2001,10 +2044,14 @@ void draw_zbuf_triag(ZBuffer &zbuf , img::EasyImage &image ,
     Color temp;
     Color newCol;
     for(auto &l : lights){
+        // Get ambient light
         temp = l->ambientLight * ambientReflection;
         newCol.red += temp.red;
         newCol.green += temp.green;
         newCol.blue += temp.blue;
+        // Get diffuse light
+//        double angle = getAngle(A , B , C);
+        temp = l->diffuseLight * diffuseReflection;
     }
     img::Color newColor = img::Color(lround(newCol.red * 255) , lround(newCol.green * 255) , lround(newCol.blue * 255));
     // Projection of the triangle
@@ -2208,22 +2255,42 @@ img::EasyImage generate_image(const ini::Configuration &configuration)
         vector<double> newAmbient;
         Color AmbientColor;
         // Diffuse light
+        bool isDiffuse;
+        bool infty;
+        vector<double> col_dir;
         vector<double> newDiffuse;
         Color DiffuseColor;
         // Specular light
         vector<double> newSpecular;
         Color SpecularColor;
         for (int i = 0; i < nrLights; ++i) {
+            // Ambient components
             newAmbient = configuration["Light" + to_string(i)]["ambientLight"].as_double_tuple_or_default({1,1,1});
             AmbientColor = Color(newAmbient);
-
-            newDiffuse = configuration["Light" + to_string(i)]["diffuseLight"].as_double_tuple_or_default({0,0,0});
-            DiffuseColor = Color(newDiffuse);
-
+            // Specular components
             newSpecular = configuration["Light" + to_string(i)]["specularLight"].as_double_tuple_or_default({0,0,0});
             SpecularColor = Color(newSpecular);
-
-            newLight = new Light(AmbientColor , DiffuseColor , SpecularColor);
+            // Diffuse components
+            infty = configuration["Light" + to_string(i)]["infinity"].as_bool_if_exists(isDiffuse);
+            if(isDiffuse){
+                if(infty){
+                    // Diffuse on infinity
+                    col_dir = configuration["Light" + to_string(i)]["direction"].as_double_tuple_or_die();
+                    newDiffuse = configuration["Light" + to_string(i)]["diffuseLight"].as_double_tuple_or_default({0,0,0});
+                    DiffuseColor = Color(newDiffuse);
+                    lights.push_back(new InfLight(AmbientColor , DiffuseColor , SpecularColor , col_dir ));
+                    continue;
+                }
+                else{
+                    // Diffuse with spotlight
+                    newDiffuse = {0,0,0};
+                    newLight = new Light(AmbientColor , DiffuseColor , SpecularColor);
+                }
+            }
+            else{
+                newDiffuse = {0,0,0};
+                newLight = new Light(AmbientColor , DiffuseColor , SpecularColor);
+            }
             lights.push_back(newLight);
         }
         Figures3D figures = drawWireframe(size , eye , backgroundcolor , nrFigures , configuration , lights);
