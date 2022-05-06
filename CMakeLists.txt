@@ -48,24 +48,24 @@ add_executable( "3d_fractals" ${engine_sources} )
 set_target_properties("3d_fractals" PROPERTIES RUNTIME_OUTPUT_DIRECTORY "${PROJECT_SOURCE_DIR}/ini/3d_fractals" )
 
 add_executable( "clipping" ${engine_sources} )
-set_target_properties("3d_fractals" PROPERTIES RUNTIME_OUTPUT_DIRECTORY "${PROJECT_SOURCE_DIR}/ini/clipping" )
+set_target_properties("clipping" PROPERTIES RUNTIME_OUTPUT_DIRECTORY "${PROJECT_SOURCE_DIR}/ini/clipping" )
 
 add_executable( "ambient" ${engine_sources} )
-set_target_properties("3d_fractals" PROPERTIES RUNTIME_OUTPUT_DIRECTORY "${PROJECT_SOURCE_DIR}/ini/ambient" )
+set_target_properties("ambient" PROPERTIES RUNTIME_OUTPUT_DIRECTORY "${PROJECT_SOURCE_DIR}/ini/ambient" )
 
 add_executable( "ambient_clipping" ${engine_sources} )
-set_target_properties("3d_fractals" PROPERTIES RUNTIME_OUTPUT_DIRECTORY "${PROJECT_SOURCE_DIR}/ini/ambient_clipping" )
+set_target_properties("ambient_clipping" PROPERTIES RUNTIME_OUTPUT_DIRECTORY "${PROJECT_SOURCE_DIR}/ini/ambient_clipping" )
 
 add_executable( "diffuse" ${engine_sources} )
-set_target_properties("3d_fractals" PROPERTIES RUNTIME_OUTPUT_DIRECTORY "${PROJECT_SOURCE_DIR}/ini/diffuse" )
+set_target_properties("diffuse" PROPERTIES RUNTIME_OUTPUT_DIRECTORY "${PROJECT_SOURCE_DIR}/ini/diffuse" )
 
 add_executable( "diffuse_clipping" ${engine_sources} )
-set_target_properties("3d_fractals" PROPERTIES RUNTIME_OUTPUT_DIRECTORY "${PROJECT_SOURCE_DIR}/ini/diffuse_clipping" )
+set_target_properties("diffuse_clipping" PROPERTIES RUNTIME_OUTPUT_DIRECTORY "${PROJECT_SOURCE_DIR}/ini/diffuse_clipping" )
 
 add_executable( "specular" ${engine_sources} )
-set_target_properties("3d_fractals" PROPERTIES RUNTIME_OUTPUT_DIRECTORY "${PROJECT_SOURCE_DIR}/ini/specular" )
+set_target_properties("specular" PROPERTIES RUNTIME_OUTPUT_DIRECTORY "${PROJECT_SOURCE_DIR}/ini/specular" )
 
 add_executable( "specular_clipping" ${engine_sources} )
-set_target_properties("3d_fractals" PROPERTIES RUNTIME_OUTPUT_DIRECTORY "${PROJECT_SOURCE_DIR}/ini/specular_clipping" )
+set_target_properties("specular_clipping" PROPERTIES RUNTIME_OUTPUT_DIRECTORY "${PROJECT_SOURCE_DIR}/ini/specular_clipping" )
 
 install( TARGETS ${exe_name} DESTINATION ${PROJECT_SOURCE_DIR}/ )
