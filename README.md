@@ -27,7 +27,7 @@ X: Niet werkend of niet geïmplementeerd
 |   | Mengerspons               |   |
 |   | View Frustum              |   |
 | 7 | Ambient licht             | V |
-|   | Diffuus licht (oneindig)  |   |
+|   | Diffuus licht (oneindig)  | V |
 |   | Diffuus licht (puntbron)  |   |
 |   | Speculair licht           |   |
 | 8 | Schaduw                   |   |
