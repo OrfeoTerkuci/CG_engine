@@ -1100,10 +1100,10 @@ Figure* createTorus(const double &r , const double &R , const int &n , const int
     vector<Face> faces;
     for (unsigned int i = 0; i < n; ++i) {
         for (unsigned int j = 0; j < m; ++j) {
-            int ind1 = i * n + j;
-            int ind2 = ( (i + 1) % n ) * n + j;
-            int ind3 = ( (i + 1) % n ) * n + (j + 1) % m;
-            int ind4 = i * n + (j + 1) % m;
+            int ind1 = i * m + j;
+            int ind2 = ( (i + 1) % n ) * m + j;
+            int ind3 = ( (i + 1) % n ) * m + (j + 1) % m;
+            int ind4 = i * m + (j + 1) % m;
             faces.push_back( Face( { ind1 , ind2 , ind3 , ind4 } ) );
         }
     }
