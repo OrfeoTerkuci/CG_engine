@@ -2061,6 +2061,7 @@ void draw_zbuf_triag(ZBuffer &zbuf , img::EasyImage &image ,
     // Convert color
     Color temp;
     Color newCol;
+    Color finalCol;
     for(auto* &l : lights){
         // Get ambient light
         temp = l->ambientLight * ambientReflection;
@@ -2079,7 +2080,7 @@ void draw_zbuf_triag(ZBuffer &zbuf , img::EasyImage &image ,
             double angle;
         }
     }
-    img::Color newColor = img::Color(lround(newCol.red * 255) , lround(newCol.green * 255) , lround(newCol.blue * 255));
+    img::Color newColor;
     // Projection of the triangle
     Point2D newA = doProjection(A , d);
     newA.x += dx;
@@ -2132,6 +2133,7 @@ void draw_zbuf_triag(ZBuffer &zbuf , img::EasyImage &image ,
             // Determine the inv_z value
             inv_z = 1.0001 * inv_z_G + (j - G.x) * dzdx + (i - G.y) * dzdy;
             // Get point light color
+            finalCol = newCol;
             for(auto* l : lights){
                 auto pnt_l = dynamic_cast<PointLight*>(l);
                 if(pnt_l != nullptr){
@@ -2142,9 +2144,9 @@ void draw_zbuf_triag(ZBuffer &zbuf , img::EasyImage &image ,
                     double angle = Vector3D::dot(l_v , w);
                     if(angle > 0){
                         temp = (l->diffuseLight * diffuseReflection) * angle;
-                        newCol = newCol + temp;
+                        finalCol = finalCol + temp;
                     }
-                    newColor = img::Color(lround(newCol.red * 255) , lround(newCol.green * 255) , lround(newCol.blue * 255));
+                    newColor = img::Color(lround(finalCol.red * 255) , lround(finalCol.green * 255) , lround(finalCol.blue * 255));
                 }
             }
             if(inv_z < zbuf[j][i]){
