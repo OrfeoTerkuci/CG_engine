@@ -1604,7 +1604,7 @@ Figures3D drawWireframe(int &size , vector<double> &eye , vector<double> &backgr
         auto pnt_l = dynamic_cast<PointLight*>(l);
         if(pnt_l != nullptr){
             pnt_l->location *= m_eye;
-            pnt_l->location.normalise();
+//            pnt_l->location.normalise();
         }
     }
     // Create figures vector
@@ -2076,13 +2076,13 @@ void draw_zbuf_triag(ZBuffer &zbuf , img::EasyImage &image ,
         if(inf_l != nullptr){
             double angle = getAngle(A , B , C , inf_l->ldVector);
             if(angle > 0){
-                temp = (l->diffuseLight * diffuseReflection) * angle;
+                temp = l->diffuseLight * diffuseReflection * angle;
                 newCol = newCol + temp;
             }
         }
     }
     img::Color newColor;
-    newColor = img::Color(lround(newCol.red * 255) , lround(newCol.green * 255) , lround(newCol.blue * 255));
+//    newColor = img::Color(lround(newCol.red * 255) , lround(newCol.green * 255) , lround(newCol.blue * 255));
     // Projection of the triangle
     Point2D newA = doProjection(A , d);
     newA.x += dx;
@@ -2142,16 +2142,19 @@ void draw_zbuf_triag(ZBuffer &zbuf , img::EasyImage &image ,
                     auto pnt_l = dynamic_cast<PointLight*>(l);
                     if(pnt_l != nullptr){
                         // Get original point
-                        double x = - j / (inv_z * d);
-                        double y = - i / (inv_z * d);
+                        double x = - (j - dx) / (inv_z * d);
+                        double y = - (i - dy) / (inv_z * d);
                         Vector3D p = Vector3D::point(x, y, 1 / inv_z);
                         // Get l vector : distance between point and pointLight
-                        Vector3D l_v = pnt_l->location - p;
+                        Vector3D l_v =  Vector3D::vector( pnt_l->location - p );
                         l_v.normalise();
                         // Get the angle
                         double angle = Vector3D::dot(l_v , w);
-                        if(angle > 0){
-                            temp = pnt_l->diffuseLight * diffuseReflection * angle;
+                        double pnt_angle = cos(pnt_l->spotAngle);
+                        if(angle > pnt_angle ){
+                            cout << angle << " , " << pnt_angle << endl;
+//                            temp = pnt_l->diffuseLight * diffuseReflection * ( (angle - pnt_angle) / (1 - pnt_angle ) );
+                            temp = pnt_l->diffuseLight * diffuseReflection * ( 1 - ( (1 - angle) / (1 - pnt_angle)  ) );
                             finalCol = finalCol + temp;
                         }
                     }
@@ -2335,9 +2338,13 @@ img::EasyImage generate_image(const ini::Configuration &configuration)
                 }
                 else{
                     // Diffuse with spotlight
+                    newDiffuse = configuration["Light" + to_string(i)]["diffuseLight"].as_double_tuple_or_default({0,0,0});
+                    DiffuseColor = Color(newDiffuse);
                     // Position of spotlight in real coordinates
                     dir_point = configuration["Light" + to_string(i)]["location"].as_double_tuple_or_default({0,0,0});
+                    // Angle of the spot
                     spotAngle = configuration["Light" + to_string(i)]["spotAngle"].as_double_or_default(90.0);
+                    spotAngle *= (M_PI / 180);
                     lights.push_back(new PointLight(AmbientColor , DiffuseColor , SpecularColor , dir_point , spotAngle));
                 }
             }
