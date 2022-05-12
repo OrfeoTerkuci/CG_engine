@@ -2155,7 +2155,7 @@ void draw_zbuf_triag(ZBuffer &zbuf , img::EasyImage &image ,
                     double x = - (j - dx) / (inv_z * d);
                     double y = - (i - dy) / (inv_z * d);
                     Vector3D p = Vector3D::point(x, y, 1 / inv_z);
-//                    p.normalise();
+                    // Point Lights
                     auto pnt_l = dynamic_cast<PointLight*>(l);
                     if(pnt_l != nullptr){
                         // Get l vector : distance between point and pointLight
@@ -2169,19 +2169,32 @@ void draw_zbuf_triag(ZBuffer &zbuf , img::EasyImage &image ,
                             finalCol = finalCol + temp;
                         }
                         // Calculate the specular light
-                        Vector3D r = 2 * Vector3D::cross(u , v) * angle - l_v;
-                        double B_angle = Vector3D::dot(r , -p);
-                        temp = pnt_l->specularLight * specularReflection * pow(B_angle , reflectionCoefficient);
-                        finalCol = finalCol + temp;
+                        l_v =  Vector3D::vector( pnt_l->location - p );
+                        Vector3D r = 2 * w * angle - l_v;
+                        r.normalise();
+                        p.normalise();
+                        angle = Vector3D::dot(r , -p);
+                        if (angle > 0){
+                            temp = pnt_l->specularLight * specularReflection * pow(angle , reflectionCoefficient);
+                            finalCol = finalCol + temp;
+                        }
                     }
-//                    auto inf_l = dynamic_cast<InfLight*>(l);
-//                    if(inf_l != nullptr){
-//                        // Calculate the specular light
-//                        Vector3D r = 2 * w * Vector3D::dot(inf_l->ldVector , w) - inf_l->ldVector;
-//                        double B_angle = Vector3D::dot(r , -p);
-//                        temp = inf_l->specularLight * specularReflection * pow(B_angle , reflectionCoefficient);
-//                        finalCol = finalCol + temp;
-//                    }
+                    // Specular for light source on infinity
+                    auto inf_l = dynamic_cast<InfLight*>(l);
+                    if(inf_l != nullptr){
+                        // Get the angle
+                        double angle = Vector3D::dot(inf_l->ldVector , w);
+
+                        // Calculate the specular light
+                        Vector3D r = 2 * w * angle - inf_l->ldVector;
+                        r.normalise();
+                        p.normalise();
+                        angle = Vector3D::dot(r , -p);
+                        if (angle > 0){
+                            temp = inf_l->specularLight * specularReflection * pow(angle , reflectionCoefficient);
+                            finalCol = finalCol + temp;
+                        }
+                    }
                 }
                 newColor = img::Color(lround(finalCol.red * 255) , lround(finalCol.green * 255) , lround(finalCol.blue * 255));
                 zbuf[j][i] = inv_z;
