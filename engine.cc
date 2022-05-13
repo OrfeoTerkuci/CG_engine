@@ -1538,6 +1538,62 @@ Figure* drawLineDrawing(double &scale , double &rotX , double &rotY , double &ro
     return newFigure;
 }
 
+Figures3D clipPlane(Figures3D &originalFigures , double dVal){
+
+}
+
+Figures3D clipView(Figures3D &originalFigures , double &d_near , double &d_far , double &hfov , double &aspectRatio){
+    Figures3D newFigures;
+    Figures3D temp;
+    vector<Face> newFace;
+    double right;
+    double top;
+    double dval;
+    // Get right
+    right = d_near * tan(hfov / 2);
+    // Get top
+    top = right / aspectRatio;
+    // Declare variables
+    Vector3D A;
+    Vector3D B;
+    Vector3D C;
+    for(auto &f : originalFigures) {
+        for(auto &face : f->faces) {
+            // Get points
+            A = f->points.at(face.point_indexes.at(0));
+            B = f->points.at(face.point_indexes.at(1));
+            C = f->points.at(face.point_indexes.at(2));
+            // Clip on dNear
+            dval = -d_near;
+            // Case: figure is completely out of bounds
+            if(A.z > dval && B.z > dval && C.z > dval){
+                newFace.push_back(face);
+            }
+            // Case: figure is completely within bounds
+            if(A.z < dval && B.z < dval && C.z < dval){
+                continue;
+            }
+
+            // Clip on dFar
+            dval = -d_far;
+
+            // Clip on left
+            dval = right;
+
+            // Clip on right
+            dval = -right;
+
+            // Clip on bottom
+            dval = top;
+
+            // Clip on top
+            dval = -top;
+        }
+    }
+
+    return newFigures;
+}
+
 Figures3D drawWireframe(int &size , vector<double> &eye , vector<double> &backgroundcolor , int &nrFigures ,
         const ini::Configuration &configuration , Lights3D &lights ){
     // Check if lighting
@@ -1796,6 +1852,10 @@ Figures3D drawWireframe(int &size , vector<double> &eye , vector<double> &backgr
             generateFractal(newFractal , nr_Iterations , fractal_scale);
             figures.insert(figures.end() , newFractal.begin() , newFractal.end());
         }
+    }
+    // Clip view
+    if(viewFustrum){
+        clipView(figures , d_near , d_far , hfov , aspectRatio);
     }
     return figures;
 }
