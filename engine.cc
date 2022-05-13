@@ -1558,6 +1558,7 @@ Figures3D drawWireframe(int &size , vector<double> &eye , vector<double> &backgr
     double phi;
     double r;
     Vector3D eyePoint = Vector3D::point(eye.at(0) , eye.at(1) , eye.at(2));
+
     // Get view fustrum components
     if(viewFustrum){
         // Get view fustrum components
@@ -1573,6 +1574,7 @@ Figures3D drawWireframe(int &size , vector<double> &eye , vector<double> &backgr
         viewDir = -eyePoint;
     }
     Matrix m_eye = eyePointTrans(eyePoint , viewDir , theta , phi , r);
+
     // Transform the lights
     for(auto* l : lights){
         auto inf_l = dynamic_cast<InfLight*>(l);
@@ -1583,9 +1585,9 @@ Figures3D drawWireframe(int &size , vector<double> &eye , vector<double> &backgr
         auto pnt_l = dynamic_cast<PointLight*>(l);
         if(pnt_l != nullptr){
             pnt_l->location *= m_eye;
-//            pnt_l->location.normalise();
         }
     }
+
     // Create figures vector
     Figures3D figures;
     // Get figures
@@ -2050,6 +2052,7 @@ void draw_zbuf_triag(ZBuffer &zbuf , img::EasyImage &image ,
     Color temp;
     Color newCol;
     Color finalCol;
+    double inf_angle;
     for(auto* &l : lights){
         // Get ambient light
         temp = l->ambientLight * ambientReflection;
@@ -2057,9 +2060,9 @@ void draw_zbuf_triag(ZBuffer &zbuf , img::EasyImage &image ,
         // Get diffuse light
         auto inf_l = dynamic_cast<InfLight*>(l);
         if(inf_l != nullptr){
-            double angle = getAngle(A , B , C , inf_l->ldVector);
-            if(angle > 0){
-                temp = l->diffuseLight * diffuseReflection * angle;
+            inf_angle = getAngle(A , B , C , inf_l->ldVector);
+            if(inf_angle > 0){
+                temp = l->diffuseLight * diffuseReflection * inf_angle;
                 newCol = newCol + temp;
             }
         }
@@ -2112,8 +2115,8 @@ void draw_zbuf_triag(ZBuffer &zbuf , img::EasyImage &image ,
             x_l_AC = x_r_AC = calculateIntersection( i , newA , newC );
         }
         // Determine x_l and x_r for y = y_i line
-        x_l = static_cast<int>(round(min({x_l_AB, x_l_AC, x_l_BC} ) + 0.5 ));
-        x_r = static_cast<int>(round(max({x_r_AB, x_r_AC, x_r_BC} ) - 0.5 ));
+        x_l = static_cast<int>( round( min( {x_l_AB, x_l_AC, x_l_BC} ) + 0.5 ) );
+        x_r = static_cast<int>( round( max( {x_r_AB, x_r_AC, x_r_BC} ) - 0.5 ) );
         for (int j = x_l; j <= x_r; ++j) {
             // Determine the inv_z value
             inv_z = 1.0001 * inv_z_G + (j - G.x) * dzdx + (i - G.y) * dzdy;
@@ -2124,7 +2127,7 @@ void draw_zbuf_triag(ZBuffer &zbuf , img::EasyImage &image ,
                     // Get original point
                     double x = - (j - dx) / (inv_z * d);
                     double y = - (i - dy) / (inv_z * d);
-                    Vector3D p = Vector3D::point(x, y, 1 / inv_z);
+                    Vector3D p = Vector3D::point( x , y , 1 / inv_z );
                     // Point Lights
                     auto pnt_l = dynamic_cast<PointLight*>(l);
                     if(pnt_l != nullptr){
@@ -2146,7 +2149,6 @@ void draw_zbuf_triag(ZBuffer &zbuf , img::EasyImage &image ,
                         origin.normalise();
                         Vector3D r = 2 * w * angle - l_v;
                         r.normalise();
-//                        p.normalise();
                         angle = Vector3D::dot(r , origin);
                         if (angle > 0){
                             temp = pnt_l->specularLight * specularReflection * pow(angle , reflectionCoefficient);
@@ -2156,13 +2158,14 @@ void draw_zbuf_triag(ZBuffer &zbuf , img::EasyImage &image ,
                     // Specular for light source on infinity
                     auto inf_l = dynamic_cast<InfLight*>(l);
                     if(inf_l != nullptr){
-                        // Get the angle
-                        double angle = Vector3D::dot(inf_l->ldVector , w);
                         // Calculate the specular light
-                        Vector3D r = 2 * w * angle - inf_l->ldVector;
+                        double angle = inf_angle;
+                        Vector3D origin = Vector3D::point(0,0,0);
+                        origin -= p;
+                        origin.normalise();
+                        Vector3D r = 2 * w * angle + inf_l->ldVector;
                         r.normalise();
-                        p.normalise();
-                        angle = Vector3D::dot(r , -p);
+                        angle = Vector3D::dot(r , origin);
                         if (angle > 0){
                             temp = inf_l->specularLight * specularReflection * pow(angle , reflectionCoefficient);
                             finalCol = finalCol + temp;
@@ -2186,11 +2189,11 @@ void draw_zbuf_triag(ZBuffer &zbuf , img::EasyImage &image ,
         }
         // Reset left and right limits
         x_l_AB = posInf;
-        x_l_AC = posInf;
         x_l_BC = posInf;
+        x_l_AC = posInf;
         x_r_AB = negInf;
-        x_r_AC = negInf;
         x_r_BC = negInf;
+        x_r_AC = negInf;
     }
 
 }
@@ -2312,6 +2315,7 @@ img::EasyImage generate_image(const ini::Configuration &configuration)
         Light* newLight = new Light(Light(Color(1.0,1.0,1.0) , Color(0,0,0) , Color(0,0,0)));
         Lights3D lights = {newLight};
         Figures3D figures = drawWireframe(size , eye , backgroundcolor , nrFigures , configuration , lights);
+        //
         return draw2DZbuffTriag(size , backgroundcolor , figures , lights);
     }
     // Case: type == "LightedZBuffering"
