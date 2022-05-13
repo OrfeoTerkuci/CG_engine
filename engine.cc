@@ -1855,7 +1855,7 @@ Figures3D drawWireframe(int &size , vector<double> &eye , vector<double> &backgr
     }
     // Clip view
     if(viewFustrum){
-        clipView(figures , d_near , d_far , hfov , aspectRatio);
+//        clipView(figures , d_near , d_far , hfov , aspectRatio);
     }
     return figures;
 }
