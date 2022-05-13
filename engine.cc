@@ -48,16 +48,6 @@ public:
         col.red = this->red + ref.red;
         col.green = this->green + ref.green;
         col.blue = this->blue + ref.blue;
-        // Correct overshoot (>1)
-        if(col.red > 1){
-            col.red -= floor(col.red);
-        }
-        if(col.green > 1){
-            col.green -= floor(col.green);
-        }
-        if(col.blue > 1){
-            col.blue -= floor(col.blue);
-        }
         return col;
     }
 
@@ -66,16 +56,6 @@ public:
         col.red = this->red * ref.red;
         col.green = this->green * ref.green;
         col.blue = this->blue * ref.blue;
-        // Correct overshoot (>1)
-        if(col.red > 1){
-            col.red -= floor(col.red);
-        }
-        if(col.green > 1){
-            col.green -= floor(col.green);
-        }
-        if(col.blue > 1){
-            col.blue -= floor(col.blue);
-        }
         return col;
     }
 
@@ -84,16 +64,6 @@ public:
         col.red = this->red * d;
         col.green = this->green * d;
         col.blue = this->blue * d;
-        // Correct overshoot (>1)
-        if(col.red > 1){
-            col.red -= floor(col.red);
-        }
-        if(col.green > 1){
-            col.green -= floor(col.green);
-        }
-        if(col.blue > 1){
-            col.blue -= floor(col.blue);
-        }
         return col;
     }
 
@@ -2170,10 +2140,14 @@ void draw_zbuf_triag(ZBuffer &zbuf , img::EasyImage &image ,
                         }
                         // Calculate the specular light
                         l_v =  Vector3D::vector( pnt_l->location - p );
+                        l_v.normalise();
+                        Vector3D origin = Vector3D::point(0,0,0);
+                        origin -= p;
+                        origin.normalise();
                         Vector3D r = 2 * w * angle - l_v;
                         r.normalise();
-                        p.normalise();
-                        angle = Vector3D::dot(r , -p);
+//                        p.normalise();
+                        angle = Vector3D::dot(r , origin);
                         if (angle > 0){
                             temp = pnt_l->specularLight * specularReflection * pow(angle , reflectionCoefficient);
                             finalCol = finalCol + temp;
@@ -2184,7 +2158,6 @@ void draw_zbuf_triag(ZBuffer &zbuf , img::EasyImage &image ,
                     if(inf_l != nullptr){
                         // Get the angle
                         double angle = Vector3D::dot(inf_l->ldVector , w);
-
                         // Calculate the specular light
                         Vector3D r = 2 * w * angle - inf_l->ldVector;
                         r.normalise();
@@ -2195,6 +2168,16 @@ void draw_zbuf_triag(ZBuffer &zbuf , img::EasyImage &image ,
                             finalCol = finalCol + temp;
                         }
                     }
+                }
+                // Check for overshot
+                if(finalCol.red > 1){
+                    finalCol.red = 1;
+                }
+                if(finalCol.green > 1){
+                    finalCol.green = 1;
+                }
+                if(finalCol.blue > 1){
+                    finalCol.blue = 1;
                 }
                 newColor = img::Color(lround(finalCol.red * 255) , lround(finalCol.green * 255) , lround(finalCol.blue * 255));
                 zbuf[j][i] = inv_z;
