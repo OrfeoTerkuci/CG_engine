@@ -14,3 +14,5 @@ diffuse
 diffuse_clipping
 specular
 specular_clipping
+shadowing
+shadowing_clipping
