@@ -1538,60 +1538,474 @@ Figure* drawLineDrawing(double &scale , double &rotX , double &rotY , double &ro
     return newFigure;
 }
 
-Figures3D clipPlane(Figures3D &originalFigures , double dVal){
+void clipTriangleOneOutNear(Vector3D &A, Vector3D &B, Vector3D &C, int &indA, int &indB, int &indC, double &dval,
+                            vector<Vector3D> &newPoints, vector<Face> &newFaces){
+    // Get new point in AB line
+    double p = ( dval - B.z ) / ( A.z - B.z );
+    Vector3D D = p * A + (1-p) * B;
+    // Get new point in AC line
+    p = ( dval - C.z ) / ( A.z - C.z );
+    Vector3D E = p * A + (1-p) * C;
+    // Make the two new triangles
+    newPoints.push_back(D);
+    int indD = static_cast<int>(newPoints.size() - 1);
+    newPoints.push_back(E);
+    int indE = static_cast<int>(newPoints.size() - 1);
+    newFaces.push_back( Face( { indD , indC , indB } ) );
+    newFaces.push_back( Face( { indD , indE , indC } ) );
+}
+
+void clipTriangleTwoOutNear(Vector3D &A, Vector3D &B, Vector3D &C, int &indA, int &indB, int &indC, double &dval,
+                            vector<Vector3D> &newPoints, vector<Face> &newFaces){
+    // Get new point in AB line
+    double p = ( dval - B.z ) / ( A.z - B.z );
+    Vector3D D = p * A + (1-p) * B;
+    // Get new point in AC line
+    p = ( dval - C.z ) / ( A.z - C.z );
+    Vector3D E = p * A + (1-p) * C;
+    // Make the new triangle
+    newPoints.push_back(D);
+    int indD = static_cast<int>(newPoints.size() - 1);
+    newPoints.push_back(E);
+    int indE = static_cast<int>(newPoints.size() - 1);
+    newFaces.push_back( Face( { indD , indE , indA } ) );
+}
+
+void clipNearFar(Figure* &originalFigure , vector<Face> &newFaces , double &d_near , double &d_Far){
+
+    double dval;
+    double p;
+    Vector3D A;
+    int indA;
+    Vector3D B;
+    int indB;
+    Vector3D C;
+    int indC;
+    Vector3D D;
+    int indD;
+    Vector3D E;
+    int indE;
+    vector<Vector3D> newPoints;
+
+    for(auto &face : originalFigure->faces){
+
+        // Get points of the face
+        indA = face.point_indexes.at(0);
+        indB = face.point_indexes.at(1);
+        indC = face.point_indexes.at(2);
+        A = originalFigure->points.at(indA);
+        B = originalFigure->points.at(indB);
+        C = originalFigure->points.at(indC);
+
+        // If all points within range
+        if(A.z < -d_near && A.z > -d_Far && B.z < -d_near && B.z > -d_Far && C.z < -d_near && C.z > -d_Far){
+            newPoints.push_back(A);
+            indA = static_cast<int>(newPoints.size() - 1);
+            newPoints.push_back(B);
+            indB = static_cast<int>(newPoints.size() - 1);
+            newPoints.push_back(C);
+            indC = static_cast<int>(newPoints.size() - 1);
+            newFaces.push_back( Face( { indA , indB , indC } ) );
+            continue;
+        }
+        // All points are out of range
+        dval = -d_near;
+        if(A.z >= dval && B.z >= dval && C.z >= dval){
+            continue;
+        }
+        dval = -d_Far;
+        if(A.z <= dval && B.z <= dval && C.z <= dval){
+            continue;
+        }
+        // Clip t.o.v near
+        dval = -d_near;
+        // If 1 point is out of range
+        // If A is out of range
+        if(A.z >= dval && B.z < dval && C.z < dval){
+            clipTriangleOneOutNear(A, B, C, indA, indB, indC, dval, newPoints, newFaces);
+        }
+        // If B is out of range
+        if(B.z >= dval && A.z < dval && C.z < dval){
+            clipTriangleOneOutNear(B, A, C, indB, indC, indA, dval, newPoints, newFaces);
+        }
+        // If C is out of range
+        if(C.z >= dval && A.z < dval && B.z < dval){
+            clipTriangleOneOutNear(C, B, A, indC, indB, indA, dval, newPoints, newFaces);
+        }
+        // If 2 points are out of range
+        // If B and c are out of range
+        if(B.z >= dval && C.z >= dval && A.z < dval){
+            clipTriangleTwoOutNear(A, B, C, indA, indB, indC, dval, newPoints, newFaces);
+        }
+        // If C and A are out of range
+        if(C.z >= dval && A.z >= dval && B.z < dval){
+            clipTriangleTwoOutNear(B, C, A, indB, indC, indA, dval, newPoints, newFaces);
+        }
+        // If A and B are out of range
+        if(A.z >= dval && B.z >= dval && C.z < dval){
+            clipTriangleTwoOutNear(C, A, B, indC, indA, indB, dval, newPoints, newFaces);
+        }
+        // Clip t.o.v far
+        dval = -d_Far;
+        // If 1 point is out of range
+        // If A is out of range
+        if(A.z <= dval && B.z > dval && C.z > dval){
+            clipTriangleOneOutNear(A, B, C, indA, indB, indC, dval, newPoints, newFaces);
+        }
+        // If B is out of range
+        if(B.z <= dval && A.z > dval && C.z > dval){
+            clipTriangleOneOutNear(B, A, C, indB, indC, indA, dval, newPoints, newFaces);
+        }
+        // If C is out of range
+        if(C.z <= dval && A.z > dval && B.z > dval){
+            clipTriangleOneOutNear(C, B, A, indC, indB, indA, dval, newPoints, newFaces);
+        }
+        // If 2 points are out of range
+        // If B and c are out of range
+        if(B.z <= dval && C.z <= dval && A.z > dval){
+            clipTriangleTwoOutNear(A, B, C, indA, indB, indC, dval, newPoints, newFaces);
+        }
+        // If C and A are out of range
+        if(C.z <= dval && A.z <= dval && B.z > dval){
+            clipTriangleTwoOutNear(B, C, A, indB, indC, indA, dval, newPoints, newFaces);
+        }
+        // If A and B are out of range
+        if(A.z <= dval && B.z <= dval && C.z > dval){
+            clipTriangleTwoOutNear(C, A, B, indC, indA, indB, dval, newPoints, newFaces);
+        }
+    }
+    // Set the new points
+    originalFigure->points = newPoints;
+    // Set the new faces
+    originalFigure->faces = newFaces;
+    newFaces = {};
+}
+
+void clipTriangleOneOutLeft(Vector3D &A, Vector3D &B, Vector3D &C, int &indA, int &indB, int &indC, double &dval ,
+                            double &d_near, vector<Vector3D> &newPoints, vector<Face> &newFaces){
+    // Get new point in AB line
+    double p = ( B.x * d_near + B.z * dval ) / ( (B.x - A.x) * d_near + (B.z - A.z) * dval );
+    Vector3D D = p * A + (1-p) * B;
+    // Get new point in AC line
+    p = ( C.x * d_near + C.z * dval ) / ( (C.x - A.x) * d_near + (C.z - A.z) * dval );
+    Vector3D E = p * A + (1-p) * C;
+    // Make the two new triangles
+    newPoints.push_back(D);
+    int indD = static_cast<int>(newPoints.size() - 1);
+    newPoints.push_back(E);
+    int indE = static_cast<int>(newPoints.size() - 1);
+    newFaces.push_back( Face( { indD , indC , indB } ) );
+    newFaces.push_back( Face( { indD , indE , indC } ) );
+}
+
+void clipTriangleTwoOutLeft(Vector3D &A, Vector3D &B, Vector3D &C, int &indA, int &indB, int &indC, double &dval ,
+                            double &d_near, vector<Vector3D> &newPoints, vector<Face> &newFaces){
+    // Get new point in AB line
+    double p = ( B.x * d_near + B.z * dval ) / ( (B.x - A.x) * d_near + (B.z - A.z) * dval );
+    Vector3D D = p * A + (1-p) * B;
+    // Get new point in AC line
+    p = ( C.x * d_near + C.z * dval ) / ( (C.x - A.x) * d_near + (C.z - A.z) * dval );
+    Vector3D E = p * A + (1-p) * C;
+    // Make the new triangle
+    newPoints.push_back(D);
+    int indD = static_cast<int>(newPoints.size() - 1);
+    newPoints.push_back(E);
+    int indE = static_cast<int>(newPoints.size() - 1);
+    newFaces.push_back( Face( { indD , indE , indA } ) );
+}
+
+void clipLeftRight(Figure* &originalFigure , vector<Face> &newFaces , double &left , double &right , double &d_near){
+
+    double dval;
+    double x_A;
+    double x_B;
+    double x_C;
+
+    Vector3D A;
+    int indA;
+    Vector3D B;
+    int indB;
+    Vector3D C;
+    int indC;
+    Vector3D D;
+    int indD;
+    Vector3D E;
+    int indE;
+    vector<Vector3D> newPoints;
+
+    for(auto &face : originalFigure->faces){
+
+        // Get points of the face
+        indA = face.point_indexes.at(0);
+        indB = face.point_indexes.at(1);
+        indC = face.point_indexes.at(2);
+        A = originalFigure->points.at(indA);
+        B = originalFigure->points.at(indB);
+        C = originalFigure->points.at(indC);
+
+        // Get projected points
+        x_A = -A.x * d_near / A.z;
+        x_B = -B.x * d_near / B.z;
+        x_C = -C.x * d_near / C.z;
+
+        // If all points within range
+        if(x_A <= right && x_A >= left && x_B <= right && x_B >= left && x_C <= right && x_C >= left){
+            newPoints.push_back(A);
+            indA = static_cast<int>(newPoints.size() - 1);
+            newPoints.push_back(B);
+            indB = static_cast<int>(newPoints.size() - 1);
+            newPoints.push_back(C);
+            indC = static_cast<int>(newPoints.size() - 1);
+            newFaces.push_back( Face( { indA , indB , indC } ) );
+            continue;
+        }
+        // All points are out of range
+        dval = left;
+        if(x_A > dval && x_B > dval && x_C > dval){
+            continue;
+        }
+        dval = right;
+        if(x_A < dval && x_B < dval && x_C < dval){
+            continue;
+        }
+        // Clip t.o.v right
+        dval = right;
+        // If 1 point is out of range
+        // If A is out of range
+        if(x_A > dval && x_B <= dval && x_C <= dval){
+            clipTriangleOneOutLeft(A, B, C, indA, indB, indC, dval , d_near, newPoints, newFaces);
+        }
+        // If B is out of range
+        if(x_B > dval && x_A <= dval && x_C <= dval){
+            clipTriangleOneOutLeft(B, A, C, indB, indC, indA, dval , d_near, newPoints, newFaces);
+        }
+        // If C is out of range
+        if(x_C > dval && x_A <= dval && x_B <= dval){
+            clipTriangleOneOutLeft(C, B, A, indC, indB, indA, dval , d_near ,  newPoints, newFaces);
+        }
+        // If 2 points are out of range
+        // If B and c are out of range
+        if(x_B > dval && x_C > dval && x_A <= dval){
+            clipTriangleTwoOutLeft(A, B, C, indA, indB, indC, dval , d_near , newPoints, newFaces);
+        }
+        // If C and A are out of range
+        if(x_C > dval && x_A > dval && x_B <= dval){
+            clipTriangleTwoOutLeft(B, C, A, indB, indC, indA, dval , d_near , newPoints, newFaces);
+        }
+        // If A and B are out of range
+        if(x_A > dval && x_B > dval && x_C <= dval){
+            clipTriangleTwoOutLeft(C, A, B, indC, indA, indB, dval , d_near , newPoints, newFaces);
+        }
+        // Clip t.o.v left
+        dval = left;
+        // If 1 point is out of range
+        // If A is out of range
+        if(x_A < dval && x_B >= dval && x_C >= dval){
+            clipTriangleOneOutLeft(A, B, C, indA, indB, indC, dval , d_near , newPoints, newFaces);
+        }
+        // If B is out of range
+        if(x_B < dval && x_A >= dval && x_C >= dval){
+            clipTriangleOneOutLeft(B, A, C, indB, indC, indA, dval , d_near , newPoints, newFaces);
+        }
+        // If C is out of range
+        if(x_C < dval && x_A >= dval && x_B >= dval){
+            clipTriangleOneOutLeft(C, B, A, indC, indB, indA, dval , d_near , newPoints, newFaces);
+        }
+        // If 2 points are out of range
+        // If B and c are out of range
+        if(x_B < dval && x_C< dval && x_A >= dval){
+            clipTriangleTwoOutLeft(A, B, C, indA, indB, indC, dval , d_near , newPoints, newFaces);
+        }
+        // If C and A are out of range
+        if(x_C < dval && x_A < dval && x_B >= dval){
+            clipTriangleTwoOutLeft(B, C, A, indB, indC, indA, dval , d_near , newPoints, newFaces);
+        }
+        // If A and B are out of range
+        if(x_A < dval && x_B < dval && x_C >= dval){
+            clipTriangleTwoOutLeft(C, A, B, indC, indA, indB, dval , d_near , newPoints, newFaces);
+        }
+    }
+    // Set the new points
+    originalFigure->points = newPoints;
+    // Set the new faces
+    originalFigure->faces = newFaces;
+    newFaces = {};
+}
+
+void clipTriangleOneOutTop(Vector3D &A, Vector3D &B, Vector3D &C, int &indA, int &indB, int &indC, double &dval ,
+                            double &d_near, vector<Vector3D> &newPoints, vector<Face> &newFaces){
+    // Get new point in AB line
+    double p = ( B.y * d_near + B.z * dval ) / ( (B.y - A.y) * d_near + (B.z - A.z) * dval );
+    Vector3D D = p * A + (1-p) * B;
+    // Get new point in AC line
+    p = ( C.y * d_near + C.z * dval ) / ( (C.y - A.y) * d_near + (C.z - A.z) * dval );
+    Vector3D E = p * A + (1-p) * C;
+    // Make the two new triangles
+    newPoints.push_back(D);
+    int indD = static_cast<int>(newPoints.size() - 1);
+    newPoints.push_back(E);
+    int indE = static_cast<int>(newPoints.size() - 1);
+    newFaces.push_back( Face( { indD , indC , indB } ) );
+    newFaces.push_back( Face( { indD , indE , indC } ) );
+}
+
+void clipTriangleTwoOutTop(Vector3D &A, Vector3D &B, Vector3D &C, int &indA, int &indB, int &indC, double &dval ,
+                            double &d_near, vector<Vector3D> &newPoints, vector<Face> &newFaces){
+    // Get new point in AB line
+    double p = ( B.y * d_near + B.z * dval ) / ( (B.y - A.y) * d_near + (B.z - A.z) * dval );
+    Vector3D D = p * A + (1-p) * B;
+    // Get new point in AC line
+    p = ( C.y * d_near + C.z * dval ) / ( (C.y - A.y) * d_near + (C.z - A.z) * dval );
+    Vector3D E = p * A + (1-p) * C;
+    // Make the new triangle
+    newPoints.push_back(D);
+    int indD = static_cast<int>(newPoints.size() - 1);
+    newPoints.push_back(E);
+    int indE = static_cast<int>(newPoints.size() - 1);
+    newFaces.push_back( Face( { indD , indE , indA } ) );
+}
+
+void clipTopBottom(Figure* &originalFigure , vector<Face> &newFaces , double &top , double &bottom , double &d_near){
+    double dval;
+    double p;
+    double y_A;
+    double y_B;
+    double y_C;
+
+    Vector3D A;
+    int indA;
+    Vector3D B;
+    int indB;
+    Vector3D C;
+    int indC;
+    Vector3D D;
+    int indD;
+    Vector3D E;
+    int indE;
+    vector<Vector3D> newPoints;
+
+    for(auto &face : originalFigure->faces){
+
+        // Get points of the face
+        indA = face.point_indexes.at(0);
+        indB = face.point_indexes.at(1);
+        indC = face.point_indexes.at(2);
+        A = originalFigure->points.at(indA);
+        B = originalFigure->points.at(indB);
+        C = originalFigure->points.at(indC);
+
+        // Get projected points
+
+        y_A = (-A.y * d_near) / A.z;
+        y_B = (-B.y * d_near) / B.z;
+        y_C = (-C.y * d_near) / C.z;
+
+        // If all points within range
+        if(y_A <= top && y_A >= bottom && y_B <= top && y_B >= bottom && y_C <= top && y_C >= bottom){
+            newPoints.push_back(A);
+            indA = static_cast<int>(newPoints.size() - 1);
+            newPoints.push_back(B);
+            indB = static_cast<int>(newPoints.size() - 1);
+            newPoints.push_back(C);
+            indC = static_cast<int>(newPoints.size() - 1);
+            newFaces.push_back( Face( { indA , indB , indC } ) );
+            continue;
+        }
+        // All points are out of range
+        dval = bottom;
+        if(y_A > dval && y_B > dval && C.y > dval){
+            continue;
+        }
+        dval = top;
+        if(y_A < dval && y_B < dval && C.y < dval){
+            continue;
+        }
+        // Clip t.o.v bottom
+        dval = bottom;
+        // If 1 point is out of range
+        // If A is out of range
+        if(y_A > dval && y_B <= dval && y_C <= dval){
+            clipTriangleOneOutLeft(A, B, C, indA, indB, indC, dval , d_near, newPoints, newFaces);
+        }
+        // If B is out of range
+        if(y_B > dval && y_A <= dval && y_C <= dval){
+            clipTriangleOneOutLeft(B, A, C, indB, indC, indA, dval , d_near, newPoints, newFaces);
+        }
+        // If C is out of range
+        if(y_C > dval && y_A <= dval && y_B <= dval){
+            clipTriangleOneOutLeft(C, B, A, indC, indB, indA, dval , d_near ,  newPoints, newFaces);
+        }
+        // If 2 points are out of range
+        // If B and c are out of range
+        if(y_B > dval && y_C > dval && y_A <= dval){
+            clipTriangleTwoOutLeft(A, B, C, indA, indB, indC, dval , d_near , newPoints, newFaces);
+        }
+        // If C and A are out of range
+        if(y_C > dval && y_A > dval && y_B <= dval){
+            clipTriangleTwoOutLeft(B, C, A, indB, indC, indA, dval , d_near , newPoints, newFaces);
+        }
+        // If A and B are out of range
+        if(y_A> dval && y_B > dval && y_C <= dval){
+            clipTriangleTwoOutLeft(C, A, B, indC, indA, indB, dval , d_near , newPoints, newFaces);
+        }
+        // Clip top.o.v top
+        dval = top;
+        // If 1 point is out of range
+        // If A is out of range
+        if(y_A < dval && y_B >= dval && y_C >= dval){
+            clipTriangleOneOutLeft(A, B, C, indA, indB, indC, dval , d_near , newPoints, newFaces);
+        }
+        // If B is out of range
+        if(y_B < dval && y_A >= dval && y_C >= dval){
+            clipTriangleOneOutLeft(B, A, C, indB, indC, indA, dval , d_near , newPoints, newFaces);
+        }
+        // If C is out of range
+        if(y_C < dval && y_A >= dval && y_B >= dval){
+            clipTriangleOneOutLeft(C, B, A, indC, indB, indA, dval , d_near , newPoints, newFaces);
+        }
+        // If 2 points are out of range
+        // If B and c are out of range
+        if(y_B < dval && y_C < dval && y_A >= dval){
+            clipTriangleTwoOutLeft(A, B, C, indA, indB, indC, dval , d_near , newPoints, newFaces);
+        }
+        // If C and A are out of range
+        if(y_C < dval && y_A < dval && y_B >= dval){
+            clipTriangleTwoOutLeft(B, C, A, indB, indC, indA, dval , d_near , newPoints, newFaces);
+        }
+        // If A and B are out of range
+        if(y_A < dval && y_B < dval && y_C >= dval){
+            clipTriangleTwoOutLeft(C, A, B, indC, indA, indB, dval , d_near , newPoints, newFaces);
+        }
+    }
+    // Set the new points
+    originalFigure->points = newPoints;
+    // Set the new faces
+    originalFigure->faces = newFaces;
+    newFaces = {};
 
 }
 
-Figures3D clipView(Figures3D &originalFigures , double &d_near , double &d_far , double &hfov , double &aspectRatio){
-    Figures3D newFigures;
-    Figures3D temp;
+void clipView(Figures3D &originalFigures , double &d_near , double &d_far , double &hfov , double &aspectRatio){
     vector<Face> newFace;
     double right;
+    double left;
     double top;
-    double dval;
+    double bottom;
     // Get right
     right = d_near * tan(hfov / 2);
+    left = -right;
     // Get top
     top = right / aspectRatio;
-    // Declare variables
-    Vector3D A;
-    Vector3D B;
-    Vector3D C;
+    bottom = -top;
+    // Check each figure
     for(auto &f : originalFigures) {
-        for(auto &face : f->faces) {
-            // Get points
-            A = f->points.at(face.point_indexes.at(0));
-            B = f->points.at(face.point_indexes.at(1));
-            C = f->points.at(face.point_indexes.at(2));
-            // Clip on dNear
-            dval = -d_near;
-            // Case: figure is completely out of bounds
-            if(A.z > dval && B.z > dval && C.z > dval){
-                newFace.push_back(face);
-            }
-            // Case: figure is completely within bounds
-            if(A.z < dval && B.z < dval && C.z < dval){
-                continue;
-            }
-
-            // Clip on dFar
-            dval = -d_far;
-
-            // Clip on left
-            dval = right;
-
-            // Clip on right
-            dval = -right;
-
-            // Clip on bottom
-            dval = top;
-
-            // Clip on top
-            dval = -top;
-        }
+        // Clip near/far
+        clipNearFar(f , newFace , d_near , d_far);
+        // Clip left/right
+        clipLeftRight(f , newFace , left , right , d_near);
+        // Clip top/bottom
+//        clipTopBottom(f , newFace , top , bottom , d_near);
     }
-
-    return newFigures;
 }
 
 Figures3D drawWireframe(int &size , vector<double> &eye , vector<double> &backgroundcolor , int &nrFigures ,
@@ -1855,7 +2269,7 @@ Figures3D drawWireframe(int &size , vector<double> &eye , vector<double> &backgr
     }
     // Clip view
     if(viewFustrum){
-//        clipView(figures , d_near , d_far , hfov , aspectRatio);
+        clipView(figures , d_near , d_far , hfov , aspectRatio);
     }
     return figures;
 }
