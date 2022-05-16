@@ -68,4 +68,10 @@ set_target_properties("specular" PROPERTIES RUNTIME_OUTPUT_DIRECTORY "${PROJECT_
 add_executable( "specular_clipping" ${engine_sources} )
 set_target_properties("specular_clipping" PROPERTIES RUNTIME_OUTPUT_DIRECTORY "${PROJECT_SOURCE_DIR}/ini/specular_clipping" )
 
+add_executable( "shadowing" ${engine_sources} )
+set_target_properties("shadowing" PROPERTIES RUNTIME_OUTPUT_DIRECTORY "${PROJECT_SOURCE_DIR}/ini/shadowing" )
+
+add_executable( "shadowing_clipping" ${engine_sources} )
+set_target_properties("shadowing_clipping" PROPERTIES RUNTIME_OUTPUT_DIRECTORY "${PROJECT_SOURCE_DIR}/ini/shadowing_clipping" )
+
 install( TARGETS ${exe_name} DESTINATION ${PROJECT_SOURCE_DIR}/ )
