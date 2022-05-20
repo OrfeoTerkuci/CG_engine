@@ -1804,10 +1804,12 @@ void clipTriangleOneOutLeft(Vector3D &A, Vector3D &B, Vector3D &C, int &indA, in
         newPoints.push_back(D);
         indD = static_cast<int>(newPoints.size() - 1);
     }
+    cout << "IndD:"<<indD << " Coords:" << D.x << "," <<D.y << "," << D.z << endl;
     if(!E_exists){
         newPoints.push_back(E);
         indE = static_cast<int>(newPoints.size() - 1);
     }
+    cout << "IndE:"<<indE << " Coords:" << E.x << "," <<E.y << "," << E.z << endl;
     newFaces.push_back( Face( { indD , indC , indB } ) );
     newFaces.push_back( Face( { indD , indE , indC } ) );
 }
@@ -1963,7 +1965,7 @@ void clipLeftRight(Figure* &originalFigure , vector<Face> &newFaces , double &le
         }
         // If B is out of range
         if(x_B < dval && x_A >= dval && x_C >= dval){
-            clipTriangleOneOutLeft(B, A, C, indB, indC, indA, dval , d_near , newPoints, newFaces);
+            clipTriangleOneOutLeft(B, A, C, indB, indA, indC, dval , d_near , newPoints, newFaces);
         }
         // If C is out of range
         if(x_C < dval && x_A >= dval && x_B >= dval){
