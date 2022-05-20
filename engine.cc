@@ -1565,12 +1565,14 @@ void getProjectedPoints(Figures3D &figs , double &d , double &x_range , double &
 
 void clipTriangleOneOutNear(Vector3D &A, Vector3D &B, Vector3D &C, int &indA, int &indB, int &indC, double &dval,
                             vector<Vector3D> &newPoints, vector<Face> &newFaces){
+    Vector3D D;
+    Vector3D E;
     // Get new point in AB line
     double p = ( dval - B.z ) / ( A.z - B.z );
-    Vector3D D = p * A + (1-p) * B;
+    D = p * A + (1-p) * B;
     // Get new point in AC line
     p = ( dval - C.z ) / ( A.z - C.z );
-    Vector3D E = p * A + (1-p) * C;
+    E = p * A + (1-p) * C;
     // Make the two new triangles
     // Check if point already exists
     int indD;
@@ -1634,20 +1636,15 @@ void clipTriangleTwoOutNear(Vector3D &A, Vector3D &B, Vector3D &C, int &indA, in
     newFaces.push_back( Face( { indD , indE , indA } ) );
 }
 
-void clipNearFar(Figure* &originalFigure , vector<Face> &newFaces , double &d_near , double &d_Far){
+void clipNear(Figure* &originalFigure , vector<Face> &newFaces , double &d_near){
 
     double dval;
-    double p;
     Vector3D A;
     int indA;
     Vector3D B;
     int indB;
     Vector3D C;
     int indC;
-    Vector3D D;
-    int indD;
-    Vector3D E;
-    int indE;
 
     vector<Vector3D> newPoints = {};
 
@@ -1660,13 +1657,11 @@ void clipNearFar(Figure* &originalFigure , vector<Face> &newFaces , double &d_ne
         A = originalFigure->points.at(indA);
         B = originalFigure->points.at(indB);
         C = originalFigure->points.at(indC);
-        cout << endl;
-
         // If all points within range
         bool A_exists = false;
         bool B_exists = false;
         bool C_exists = false;
-        if(A.z < -d_near && A.z > -d_Far && B.z < -d_near && B.z > -d_Far && C.z < -d_near && C.z > -d_Far){
+        if(A.z < -d_near && B.z < -d_near && C.z < -d_near){
             // Check if point already exists
             for (auto &newPoint : newPoints) {
                 if (A == newPoint) {
@@ -1699,10 +1694,6 @@ void clipNearFar(Figure* &originalFigure , vector<Face> &newFaces , double &d_ne
         if(A.z >= dval && B.z >= dval && C.z >= dval){
             continue;
         }
-        dval = -d_Far;
-        if(A.z <= dval && B.z <= dval && C.z <= dval){
-            continue;
-        }
         // Clip t.o.v near
         dval = -d_near;
         // If 1 point is out of range
@@ -1731,8 +1722,67 @@ void clipNearFar(Figure* &originalFigure , vector<Face> &newFaces , double &d_ne
         if(A.z >= dval && B.z >= dval && C.z < dval){
             clipTriangleTwoOutNear(C, A, B, indC, indA, indB, dval , newPoints , newFaces);
         }
+    }
+    // Set the new points
+    originalFigure->points = newPoints;
+    // Set the new faces
+    originalFigure->faces = newFaces;
+}
+
+void clipFar(Figure* &originalFigure , vector<Face> &newFaces , double &d_far){
+    double dval;
+    Vector3D A;
+    int indA;
+    Vector3D B;
+    int indB;
+    Vector3D C;
+    int indC;
+
+    vector<Vector3D> newPoints = {};
+
+    for(auto &face : originalFigure->faces){
+
+        // Get points of the face
+        indA = face.point_indexes.at(0);
+        indB = face.point_indexes.at(1);
+        indC = face.point_indexes.at(2);
+        A = originalFigure->points.at(indA);
+        B = originalFigure->points.at(indB);
+        C = originalFigure->points.at(indC);
+        // If all points within range
+        bool A_exists = false;
+        bool B_exists = false;
+        bool C_exists = false;
+        if(A.z > -d_far && B.z > -d_far && C.z > -d_far){
+            // Check if point already exists
+            for (auto &newPoint : newPoints) {
+                if (A == newPoint) {
+                    A_exists = true;
+                }
+                if(B == newPoint){
+                    B_exists = true;
+                }
+                if(C == newPoint){
+                    C_exists = true;
+                }
+            }
+            if(!A_exists){
+                newPoints.push_back(A);
+                indA = static_cast<int>(newPoints.size() - 1);
+            }
+            if(!B_exists){
+                newPoints.push_back(B);
+                indB = static_cast<int>(newPoints.size() - 1);
+            }
+            if(!C_exists){
+                newPoints.push_back(C);
+                indC = static_cast<int>(newPoints.size() - 1);
+            }
+            newFaces.push_back( Face( { indA , indB , indC } ) );
+            continue;
+        }
         // Clip t.o.v far
-        dval = -d_Far;
+        dval = -d_far;
         // If 1 point is out of range
         // If A is out of range
         if(A.z <= dval && B.z > dval && C.z > dval){
@@ -1764,8 +1814,6 @@ void clipNearFar(Figure* &originalFigure , vector<Face> &newFaces , double &d_ne
     originalFigure->points = newPoints;
     // Set the new faces
     originalFigure->faces = newFaces;
-    newPoints = {};
-    newFaces = {};
 }
 
 void clipTriangleOneOutLeft(Vector3D &A, Vector3D &B, Vector3D &C, int &indA, int &indB, int &indC, double &dval ,
@@ -1849,10 +1897,20 @@ void clipTriangleTwoOutLeft(Vector3D &A, Vector3D &B, Vector3D &C, int &indA, in
     Vector3D E;
     // Get new point in AB line
     double p = ( B.x * d_near + B.z * dval ) / ( (B.x - A.x) * d_near + (B.z - A.z) * dval );
-    D = p * A + (1-p) * B;
+    if(dval <= 0){
+        D = p * A + (1-p) * B;
+    }
+    else{
+        E = p * A + (1-p) * B;
+    }
     // Get new point in AC line
     p = ( C.x * d_near + C.z * dval ) / ( (C.x - A.x) * d_near + (C.z - A.z) * dval );
-    E = p * A + (1-p) * C;
+    if(dval <= 0){
+        E = p * A + (1-p) * C;
+    }
+    else{
+        D = p * A + (1-p) * C;
+    }
     // Make the new triangle
     // Check if point already exists
     int indD;
@@ -1886,7 +1944,12 @@ void clipTriangleTwoOutLeft(Vector3D &A, Vector3D &B, Vector3D &C, int &indA, in
         newPoints.push_back(E);
         indE = static_cast<int>(newPoints.size() - 1);
     }
-    newFaces.push_back( Face( { indD , indE , indA } ) );
+    if(dval <= 0){
+        newFaces.push_back( Face( { indA , indD , indE } ) );
+    }
+    else{
+        newFaces.push_back( Face( { indA , indE , indD } ) );
+    }
 }
 
 void clipLeft(Figure* &originalFigure , vector<Face> &newFaces , double &left , double &d_near){
@@ -2018,11 +2081,10 @@ void clipRight(Figure* &originalFigure , vector<Face> &newFaces , double &right 
         x_A = -A.x * d_near / A.z;
         x_B = -B.x * d_near / B.z;
         x_C = -C.x * d_near / C.z;
-        // If all points within range
         bool A_exists = false;
         bool B_exists = false;
         bool C_exists = false;
-
+        // If all points within range
         if(x_A <= right && x_B <= right && x_C <= right){
             // Check if point already exists
             for (auto &newPoint : newPoints) {
@@ -2052,12 +2114,12 @@ void clipRight(Figure* &originalFigure , vector<Face> &newFaces , double &right 
             continue;
         }
 
+        // Clip t.o.v right
         dval = right;
+        // If all points are out of range
         if (x_A > dval && x_B > dval && x_C > dval) {
             continue;
         }
-        // Clip t.o.v right
-        dval = right;
         // If 1 point is out of range
         // If A is out of range
         if (x_A > dval && x_B <= dval && x_C <= dval) {
@@ -2167,19 +2229,36 @@ void clipTriangleOneOutTop(Vector3D &A, Vector3D &B, Vector3D &C, int &indA, int
 
 void clipTriangleTwoOutTop(Vector3D &A, Vector3D &B, Vector3D &C, int &indA, int &indB, int &indC, double &dval ,
                             double &d_near, vector<Vector3D> &newPoints, vector<Face> &newFaces){
+    Vector3D D;
+    Vector3D E;
     // Get new point in AB line
     double p = ( B.y * d_near + B.z * dval ) / ( (B.y - A.y) * d_near + (B.z - A.z) * dval );
-    Vector3D D = p * A + (1-p) * B;
+    if(dval >= 0){
+        D = p * A + (1-p) * B;
+    }
+    else{
+        E = p * A + (1-p) * B;
+    }
     // Get new point in AC line
     p = ( C.y * d_near + C.z * dval ) / ( (C.y - A.y) * d_near + (C.z - A.z) * dval );
-    Vector3D E = p * A + (1-p) * C;
+    if(dval >= 0){
+        E = p * A + (1-p) * C;
+    }
+    else{
+        D = p * A + (1-p) * C;
+    }
     // Make the new triangle
     // Check if point already exists
     int indD;
     int indE;
+    bool A_exists = false;
     bool D_exists = false;
     bool E_exists = false;
     for (int i = 0; i < newPoints.size(); i++) {
+        if (A == newPoints.at(i)){
+            A_exists = true;
+            indA = i;
+        }
         if (D == newPoints.at(i)) {
             D_exists = true;
             indD = i;
@@ -2189,6 +2268,10 @@ void clipTriangleTwoOutTop(Vector3D &A, Vector3D &B, Vector3D &C, int &indA, int
             indE = i;
         }
     }
+    if(!A_exists){
+        newPoints.push_back(A);
+        indA = static_cast<int>(newPoints.size() - 1);
+    }
     if(!D_exists){
         newPoints.push_back(D);
         indD = static_cast<int>(newPoints.size() - 1);
@@ -2197,7 +2280,12 @@ void clipTriangleTwoOutTop(Vector3D &A, Vector3D &B, Vector3D &C, int &indA, int
         newPoints.push_back(E);
         indE = static_cast<int>(newPoints.size() - 1);
     }
-    newFaces.push_back( Face( { indD , indE , indA } ) );
+    if(dval >= 0){
+        newFaces.push_back( Face( { indA , indD , indE } ) );
+    }
+    else{
+        newFaces.push_back( Face( { indA , indE , indD } ) );
+    }
 }
 
 void clipTop(Figure* &originalFigure , vector<Face> &newFaces , double &top , double &d_near){
@@ -2428,7 +2516,9 @@ void clipView(Figures3D &originalFigures , double &d_near , double &d_far , doub
     // Check each figure
     for(auto &f : originalFigures) {
         // Clip near/far
-        clipNearFar(f , newFace , d_near , d_far);
+        clipNear(f , newFace , d_near);
+        // Clip far
+        clipFar(f , newFace , d_far);
         // Clip left
         clipLeft(f , newFace , left , d_near);
         // Clip right
@@ -2436,7 +2526,7 @@ void clipView(Figures3D &originalFigures , double &d_near , double &d_far , doub
         // Clip top
         clipTop(f , newFace , top , d_near );
         // Clip bottom
-//        clipBottom(f , newFace , bottom , d_near );
+        clipBottom(f , newFace , bottom , d_near );
         newFace = {};
     }
 }
