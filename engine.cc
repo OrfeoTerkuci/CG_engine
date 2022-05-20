@@ -1849,8 +1849,9 @@ void clipTriangleOneOutLeft(Vector3D &A, Vector3D &B, Vector3D &C, int &indA, in
         newFaces.push_back( Face( { indD , indE , indB } ) );
     }
     else{
-        newFaces.push_back( Face( { indE , indD , indC } ) );
+        newFaces.push_back( Face( { indD , indC , indE } ) );
     }
+
 }
 
 void clipTriangleTwoOutLeft(Vector3D &A, Vector3D &B, Vector3D &C, int &indA, int &indB, int &indC, double &dval ,
@@ -1932,10 +1933,6 @@ void clipLeftRight(Figure* &originalFigure , vector<Face> &newFaces , double &le
 
         cout << "Left: " << left << endl;
         cout << "Right: " << right << endl;
-
-//        cout << "IndA:" << indA << " Coords:" << A.x << "," << A.y << "," << A.z << endl;
-//        cout << "IndB:" << indB << " Coords:" << B.x << "," << B.y << "," << B.z << endl;
-//        cout << "IndC:" << indC << " Coords:" << C.x << "," << C.y << "," << C.z << endl;
         cout << endl;
 
         // If all points within range
@@ -1982,34 +1979,6 @@ void clipLeftRight(Figure* &originalFigure , vector<Face> &newFaces , double &le
         if(x_A < dval && x_B < dval && x_C < dval){
             continue;
         }
-        // Clip t.o.v right
-        dval = right;
-        // If 1 point is out of range
-        // If A is out of range
-        if(x_A > dval && x_B <= dval && x_C <= dval){
-            clipTriangleOneOutLeft(A, B, C, indA, indB, indC, dval , d_near, newPoints, newFaces);
-        }
-        // If B is out of range
-        if(x_B > dval && x_A <= dval && x_C <= dval){
-            clipTriangleOneOutLeft(B, C, A, indB, indC, indA, dval , d_near, newPoints, newFaces);
-        }
-        // If C is out of range
-        if(x_C > dval && x_A <= dval && x_B <= dval){
-            clipTriangleOneOutLeft(C, A, B, indC, indA, indB, dval , d_near ,  newPoints, newFaces);
-        }
-        // If 2 points are out of range
-        // If B and C are out of range
-        if(x_B > dval && x_C > dval && x_A <= dval){
-            clipTriangleTwoOutLeft(A, B, C, indA, indB, indC, dval , d_near , newPoints, newFaces);
-        }
-        // If C and A are out of range
-        if(x_C > dval && x_A > dval && x_B <= dval){
-            clipTriangleTwoOutLeft(B, C, A, indB, indC, indA, dval , d_near , newPoints, newFaces);
-        }
-        // If A and B are out of range
-        if(x_A > dval && x_B > dval && x_C <= dval){
-            clipTriangleTwoOutLeft(C, A, B, indC, indA, indB, dval , d_near , newPoints, newFaces);
-        }
         // Clip t.o.v left
         dval = left;
         // If 1 point is out of range
@@ -2036,6 +2005,34 @@ void clipLeftRight(Figure* &originalFigure , vector<Face> &newFaces , double &le
         }
         // If A and B are out of range
         if(x_A < dval && x_B < dval && x_C >= dval){
+            clipTriangleTwoOutLeft(C, A, B, indC, indA, indB, dval , d_near , newPoints, newFaces);
+        }
+        // Clip t.o.v right
+        dval = right;
+        // If 1 point is out of range
+        // If A is out of range
+        if(x_A > dval && x_B <= dval && x_C <= dval){
+            clipTriangleOneOutLeft(A, B, C, indA, indB, indC, dval , d_near, newPoints, newFaces);
+        }
+        // If B is out of range
+        if(x_B > dval && x_A <= dval && x_C <= dval){
+            clipTriangleOneOutLeft(B, C, A, indB, indC, indA, dval , d_near, newPoints, newFaces);
+        }
+        // If C is out of range
+        if(x_C > dval && x_A <= dval && x_B <= dval){
+            clipTriangleOneOutLeft(C, A, B, indC, indA, indB, dval , d_near ,  newPoints, newFaces);
+        }
+        // If 2 points are out of range
+        // If B and C are out of range
+        if(x_B > dval && x_C > dval && x_A <= dval){
+            clipTriangleTwoOutLeft(A, B, C, indA, indB, indC, dval , d_near , newPoints, newFaces);
+        }
+        // If C and A are out of range
+        if(x_C > dval && x_A > dval && x_B <= dval){
+            clipTriangleTwoOutLeft(B, C, A, indB, indC, indA, dval , d_near , newPoints, newFaces);
+        }
+        // If A and B are out of range
+        if(x_A > dval && x_B > dval && x_C <= dval){
             clipTriangleTwoOutLeft(C, A, B, indC, indA, indB, dval , d_near , newPoints, newFaces);
         }
     }
@@ -2268,7 +2265,7 @@ void clipView(Figures3D &originalFigures , double &d_near , double &d_far , doub
     double top;
     double bottom;
     // Get right
-    hfov *= (M_PI / 180);
+    hfov *= M_PI / 180;
     right = d_near * tan(hfov / 2);
     left = -right;
     // Get top
