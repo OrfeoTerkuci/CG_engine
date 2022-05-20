@@ -1569,17 +1569,27 @@ void clipTriangleOneOutNear(Vector3D &A, Vector3D &B, Vector3D &C, int &indA, in
     Vector3D E;
     // Get new point in AB line
     double p = ( dval - B.z ) / ( A.z - B.z );
-    D = p * A + (1-p) * B;
+    E = p * A + (1-p) * B;
     // Get new point in AC line
     p = ( dval - C.z ) / ( A.z - C.z );
-    E = p * A + (1-p) * C;
+    D = p * A + (1-p) * C;
     // Make the two new triangles
     // Check if point already exists
     int indD;
     int indE;
+    bool B_exists = false;
+    bool C_exists = false;
     bool D_exists = false;
     bool E_exists = false;
     for (int i = 0; i < newPoints.size(); i++) {
+        if (B == newPoints.at(i)) {
+            B_exists = true;
+            indB = i;
+        }
+        if (C == newPoints.at(i)) {
+            C_exists = true;
+            indC = i;
+        }
         if (D == newPoints.at(i)) {
             D_exists = true;
             indD = i;
@@ -1589,6 +1599,14 @@ void clipTriangleOneOutNear(Vector3D &A, Vector3D &B, Vector3D &C, int &indA, in
             indE = i;
         }
     }
+    if(!B_exists){
+        newPoints.push_back(B);
+        indB = static_cast<int>(newPoints.size() - 1);
+    }
+    if(!C_exists){
+        newPoints.push_back(C);
+        indC = static_cast<int>(newPoints.size() - 1);
+    }
     if(!D_exists){
         newPoints.push_back(D);
         indD = static_cast<int>(newPoints.size() - 1);
@@ -1597,8 +1615,8 @@ void clipTriangleOneOutNear(Vector3D &A, Vector3D &B, Vector3D &C, int &indA, in
         newPoints.push_back(E);
         indE = static_cast<int>(newPoints.size() - 1);
     }
-    newFaces.push_back( Face( { indD , indC , indB } ) );
-    newFaces.push_back( Face( { indD , indE , indC } ) );
+    newFaces.push_back( Face( { indD , indB , indC } ) );
+    newFaces.push_back( Face( { indD , indE , indB } ) );
 }
 
 void clipTriangleTwoOutNear(Vector3D &A, Vector3D &B, Vector3D &C, int &indA, int &indB, int &indC, double &dval,
