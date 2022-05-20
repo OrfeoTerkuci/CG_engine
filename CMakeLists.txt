@@ -74,4 +74,10 @@ set_target_properties("shadowing" PROPERTIES RUNTIME_OUTPUT_DIRECTORY "${PROJECT
 add_executable( "shadowing_clipping" ${engine_sources} )
 set_target_properties("shadowing_clipping" PROPERTIES RUNTIME_OUTPUT_DIRECTORY "${PROJECT_SOURCE_DIR}/ini/shadowing_clipping" )
 
+add_executable( "obj_parser_en_voorbeeld" ${engine_sources} )
+set_target_properties("obj_parser_en_voorbeeld" PROPERTIES RUNTIME_OUTPUT_DIRECTORY "${PROJECT_SOURCE_DIR}/ini/obj_parser_en_voorbeeld" )
+
+add_executable( "spheres_and_cylinders" ${engine_sources} )
+set_target_properties("spheres_and_cylinders" PROPERTIES RUNTIME_OUTPUT_DIRECTORY "${PROJECT_SOURCE_DIR}/ini/spheres_and_cylinders" )
+
 install( TARGETS ${exe_name} DESTINATION ${PROJECT_SOURCE_DIR}/ )
