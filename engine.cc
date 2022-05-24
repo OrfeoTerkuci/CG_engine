@@ -1622,7 +1622,7 @@ void clipTriangleOneOutNear(Vector3D &A, Vector3D &B, Vector3D &C, int &indA, in
 //    cout << "IndC: " << indC << " Coords: " << C.x << " , " << C.y  << " , " << C.z << endl;
 //    cout << "IndD: " << indD << " Coords: " << D.x << " , " << D.y  << " , " << D.z << endl;
 //    cout << "IndE: " << indE << " Coords: " << E.x << " , " << E.y  << " , " << E.z << endl;
-    cout << endl;
+//    cout << endl;
 
 }
 
@@ -1673,7 +1673,7 @@ void clipTriangleTwoOutNear(Vector3D &A, Vector3D &B, Vector3D &C, int &indA, in
 //    cout << "IndA: " << indA << " Coords: " << A.x << " , " << A.y  << " , " << A.z << endl;
 //    cout << "IndD: " << indD << " Coords: " << D.x << " , " << D.y  << " , " << D.z << endl;
 //    cout << "IndE: " << indE << " Coords: " << E.x << " , " << E.y  << " , " << E.z << endl;
-    cout << endl;
+//    cout << endl;
 
 }
 
@@ -1738,7 +1738,7 @@ void clipTriangleOneOutFar(Vector3D &A, Vector3D &B, Vector3D &C, int &indA, int
 //    cout << "IndC: " << indC << " Coords: " << C.x << " , " << C.y  << " , " << C.z << endl;
 //    cout << "IndD: " << indD << " Coords: " << D.x << " , " << D.y  << " , " << D.z << endl;
 //    cout << "IndE: " << indE << " Coords: " << E.x << " , " << E.y  << " , " << E.z << endl;
-    cout << endl;
+//    cout << endl;
 
 }
 
