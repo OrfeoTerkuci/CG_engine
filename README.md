@@ -6,8 +6,8 @@ X: Niet werkend of niet geïmplementeerd
 (blanco): TODO  
 
 
-|   | Functionaliteit      | Status |
-|---|---------------------------|:---:|
+|   | Functionaliteit           | Status |
+|---|---------------------------|:------:|
 | 1 | 2D L-systemen             | V |
 |   | Met haakjes               | V |
 |   | Stochastisch              | X |
@@ -44,5 +44,7 @@ Geïmplementeerde vorm van texture mapping: ...
 ...
 
 ## Extra functionaliteit, niet in de opgaves beschreven
-...
+|   | Functionaliteit           | Status |
+|---|---------------------------|:------:|
+| 1 | Plane                     | V |
 
