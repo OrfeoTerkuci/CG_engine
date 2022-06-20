@@ -44,7 +44,9 @@ Geïmplementeerde vorm van texture mapping: ...
 ...
 
 ## Extra functionaliteit, niet in de opgaves beschreven
-|   | Functionaliteit           | Status |
-|---|---------------------------|:------:|
-| 1 | Plane                     | V |
+|    | Functionaliteit           | Status |
+|----|---------------------------|:------:|
+| 10 | Plane                     | V |
+| 11 | Rectangular Plane         | V |
+| 12 | Rectangular Prism         | V |
 
