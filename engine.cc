@@ -759,20 +759,66 @@ Lines2D doProjection(Figures3D &figs , const double d){
 
 Figure* createPlane(vector<double>&ambientCoeff , vector<double> &diffuseCoeff , vector<double> &specularCoeff , double &reflectionCoeff){
     // Points array
-    double Points_T [3][8] = {
+    double Points_T [2][4] = {
             { 1 , -1 , 1 , -1 },
-            { -1 , 1 , 1 , -1 },
-            {-1 , -1 , -1 , -1 }
+            { -1 , 1 , 1 , -1 }
+    };
+    // Create all the points
+    vector<Vector3D> points;
+    for (int i = 0; i < 4; ++i) {
+        points.push_back(Vector3D::point(Points_T[0][i],Points_T[1][i],0));
+    }
+    vector<Face> faces = {new Face({0,3,1,2})};
+
+    Figure *newPlane = new Figure(points , faces , ambientCoeff , diffuseCoeff , specularCoeff , reflectionCoeff);
+    return newPlane;
+}
+
+Figure* createRectanglePlane(vector<double>&ambientCoeff , vector<double> &diffuseCoeff , vector<double> &specularCoeff , double &reflectionCoeff , double &l , double &w){
+    // Points array
+    double Points_T [2][4] = {
+            { w/2 , -w/2 , w/2 , -w/2 },
+            { -l/2 , l/2 , l/2 , -l/2 }
+    };
+    // Create all the points
+    vector<Vector3D> points;
+    for (int i = 0; i < 4; ++i) {
+        points.push_back(Vector3D::point(Points_T[0][i],Points_T[1][i],0));
+    }
+    vector<Face> faces = {new Face({0,3,1,2})};
+
+    Figure *newPlane = new Figure(points , faces , ambientCoeff , diffuseCoeff , specularCoeff , reflectionCoeff);
+    return newPlane;
+}
+
+Figure* createRectangle(vector<double>&ambientCoeff , vector<double> &diffuseCoeff , vector<double> &specularCoeff , double &reflectionCoeff , double &l , double &w , double &h) {
+    // Points array
+    double Points_T [3][8] = {
+            { w/2 , -w/2 , w/2 , -w/2 , w/2 , -w/2 , w/2 , -w/2 },
+            { -l/2 , l/2 , l/2 , -l/2 , l/2 , -l/2 , -l/2 , l/2 },
+            { -h/2 , -h/2 , h/2 , h/2 , -h/2 , -h/2 , h/2 , h/2  }
+    };
+    // Faces array
+    int Faces_T [4][6] = {
+            { 0 , 4 , 1 , 5 , 6 , 0 },
+            { 4 , 1 , 5 , 0 , 2 , 5 },
+            { 2 , 7 , 3 , 6 , 7 , 1 },
+            { 6 , 2 , 7 , 3 , 3 , 4 }
     };
     // Create all the points
     vector<Vector3D> points;
     for (int i = 0; i < 8; ++i) {
         points.push_back(Vector3D::point(Points_T[0][i],Points_T[1][i],Points_T[2][i]));
     }
-    vector<Face> faces = {new Face({0,3,1,2})};
-
-    Figure *newPlane = new Figure(points , faces , ambientCoeff , diffuseCoeff , specularCoeff , reflectionCoeff);
-    return newPlane;
+    // Create all the faces
+    vector<Face> faces;
+    for (int j = 0; j < 6; ++j) {
+        faces.push_back( Face( {Faces_T[0][j] , Faces_T[1][j] , Faces_T[2][j] , Faces_T[3][j]} ) );
+    }
+    // Create new figure
+    Figure* newRectPrism;
+    newRectPrism = new Figure( points , faces , ambientCoeff , diffuseCoeff , specularCoeff , reflectionCoeff);
+    return newRectPrism;
 }
 
 Figure* createCube(vector<double>&ambientCoeff , vector<double> &diffuseCoeff , vector<double> &specularCoeff , double &reflectionCoeff){
@@ -2838,6 +2884,27 @@ Figures3D drawWireframe(int &size , vector<double> &eye , vector<double> &backgr
             // Create new figure
             Figure* newFigure;
             newFigure = createPlane(ambientCoefficient , diffuseCoefficient , specularCoefficient , reflectionCoefficient);
+            newFigure->applyTransformation(m);
+            figures.push_back(newFigure);
+        }
+
+        else if (figure_type == "Rectangular Plane"){
+            // Create new figure
+            Figure* newFigure;
+            double length = configuration["Figure"+to_string(i)]["length"].as_double_or_default(1);
+            double width = configuration["Figure"+to_string(i)]["width"].as_double_or_default(1);
+            newFigure = createRectanglePlane(ambientCoefficient , diffuseCoefficient , specularCoefficient , reflectionCoefficient , length , width);
+            newFigure->applyTransformation(m);
+            figures.push_back(newFigure);
+        }
+
+        else if (figure_type == "Rectangular Prism"){
+            // Create new figure
+            Figure* newFigure;
+            double length = configuration["Figure"+to_string(i)]["length"].as_double_or_default(1);
+            double width = configuration["Figure"+to_string(i)]["width"].as_double_or_default(1);
+            double height = configuration["Figure"+to_string(i)]["height"].as_double_or_default(1);
+            newFigure = createRectangle(ambientCoefficient , diffuseCoefficient , specularCoefficient , reflectionCoefficient , length , width , height);
             newFigure->applyTransformation(m);
             figures.push_back(newFigure);
         }
