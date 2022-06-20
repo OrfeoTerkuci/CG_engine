@@ -757,6 +757,24 @@ Lines2D doProjection(Figures3D &figs , const double d){
 
 // Session 3: Figures - Platonic bodies
 
+Figure* createPlane(vector<double>&ambientCoeff , vector<double> &diffuseCoeff , vector<double> &specularCoeff , double &reflectionCoeff){
+    // Points array
+    double Points_T [3][8] = {
+            { 1 , -1 , 1 , -1 },
+            { -1 , 1 , 1 , -1 },
+            {-1 , -1 , -1 , -1 }
+    };
+    // Create all the points
+    vector<Vector3D> points;
+    for (int i = 0; i < 8; ++i) {
+        points.push_back(Vector3D::point(Points_T[0][i],Points_T[1][i],Points_T[2][i]));
+    }
+    vector<Face> faces = {new Face({0,3,1,2})};
+
+    Figure *newPlane = new Figure(points , faces , ambientCoeff , diffuseCoeff , specularCoeff , reflectionCoeff);
+    return newPlane;
+}
+
 Figure* createCube(vector<double>&ambientCoeff , vector<double> &diffuseCoeff , vector<double> &specularCoeff , double &reflectionCoeff){
     // Points array
     double Points_T [3][8] = {
@@ -2816,6 +2834,14 @@ Figures3D drawWireframe(int &size , vector<double> &eye , vector<double> &backgr
             figures.push_back(newFigure);
         }
         // Figure_type : "Cube"
+        else if (figure_type == "Plane"){
+            // Create new figure
+            Figure* newFigure;
+            newFigure = createPlane(ambientCoefficient , diffuseCoefficient , specularCoefficient , reflectionCoefficient);
+            newFigure->applyTransformation(m);
+            figures.push_back(newFigure);
+        }
+
         else if (figure_type == "Cube"){
             // Create new figure
             Figure* newFigure;
