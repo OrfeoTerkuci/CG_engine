@@ -80,4 +80,7 @@ set_target_properties("obj_parser_en_voorbeeld" PROPERTIES RUNTIME_OUTPUT_DIRECT
 add_executable( "spheres_and_cylinders" ${engine_sources} )
 set_target_properties("spheres_and_cylinders" PROPERTIES RUNTIME_OUTPUT_DIRECTORY "${PROJECT_SOURCE_DIR}/ini/spheres_and_cylinders" )
 
+add_executable( "TrafficSimulation" ${engine_sources} )
+set_target_properties("TrafficSimulation" PROPERTIES RUNTIME_OUTPUT_DIRECTORY "${PROJECT_SOURCE_DIR}/ini/TrafficSimulation" )
+
 install( TARGETS ${exe_name} DESTINATION ${PROJECT_SOURCE_DIR}/ )
