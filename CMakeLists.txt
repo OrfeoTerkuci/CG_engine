@@ -83,4 +83,7 @@ set_target_properties("spheres_and_cylinders" PROPERTIES RUNTIME_OUTPUT_DIRECTOR
 add_executable( "Examens" ${engine_sources} )
 set_target_properties("Examens" PROPERTIES RUNTIME_OUTPUT_DIRECTORY "${PROJECT_SOURCE_DIR}/ini/Examens" )
 
+add_executable( "image_recognition_test" ${engine_sources} )
+set_target_properties("image_recognition_test" PROPERTIES RUNTIME_OUTPUT_DIRECTORY "${PROJECT_SOURCE_DIR}/ini/image_recognition_test" )
+
 install( TARGETS ${exe_name} DESTINATION ${PROJECT_SOURCE_DIR}/ )

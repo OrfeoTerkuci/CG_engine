@@ -15,13 +15,14 @@
 #include <cassert>
 #include <limits>
 #include <map>
-// For VS Code
 
-#ifndef M_PI
-    #define M_PI 3.14159265358979323846
-#endif
+//#ifndef M_PI
+//    #define M_PI 3.14159265358979323846
+//#endif
 
 using namespace std;
+
+enum blur_type{Gaussian , Radial , None};
 
 // Declaring data structures
 class Color {
@@ -38,11 +39,11 @@ public:
      */
     Color(double red, double green, double blue) : red(red), green(green), blue(blue) {}
 
-    Color(vector<double> newColor) : red(newColor.at(0)) , green(newColor.at(1)) , blue(newColor.at(2)) {}
+    explicit Color(vector<double> newColor) : red(newColor.at(0)) , green(newColor.at(1)) , blue(newColor.at(2)) {}
 
     Color() : red(0) , green(0) , blue(0) {}
 
-    Color operator+(const Color &ref){
+    Color operator+(const Color &ref) const{
         Color col;
         // Sum up the color components
         col.red = this->red + ref.red;
@@ -51,7 +52,7 @@ public:
         return col;
     }
 
-    Color operator*(const Color &ref){
+    Color operator*(const Color &ref) const{
         Color col;
         col.red = this->red * ref.red;
         col.green = this->green * ref.green;
@@ -59,7 +60,7 @@ public:
         return col;
     }
 
-    Color operator*(const double d){
+    Color operator*(const double d) const{
         Color col;
         col.red = this->red * d;
         col.green = this->green * d;
@@ -67,9 +68,7 @@ public:
         return col;
     }
 
-    virtual ~Color() {
-
-    }
+    virtual ~Color() = default;
 };
 
 class Point2D {
@@ -84,9 +83,7 @@ public:
      */
     Point2D(double x, double y) : x(x), y(y) {}
 
-    virtual ~Point2D() {
-
-    }
+    virtual ~Point2D() = default;
 };
 
 class Point3D {
@@ -98,9 +95,7 @@ public:
 
     Point3D(double x, double y, double z) : x(x), y(y), z(z) {}
 
-    virtual ~Point3D() {
-
-    }
+    virtual ~Point3D() = default;
 };
 
 class Line2D {
@@ -118,7 +113,7 @@ public:
      * @param p2 End point : Point2D type object
      * @param color Line color : Color type object
      */
-    Line2D(const Point2D &p1, const Point2D &p2, const Color &color) : p1(p1), p2(p2), color(color) {}
+    Line2D(const Point2D &p1, const Point2D &p2, const Color &color) : p1(p1), p2(p2), color(color) , z1(1) , z2(1) {}
 
     /**
      *
@@ -139,9 +134,7 @@ public:
                                 color(refLine->color) , z1(refLine->z1) ,
                                 z2(refLine->z2) {}
 
-    virtual ~Line2D() {
-
-    }
+    virtual ~Line2D() = default;
 };
 
 class Face {
@@ -154,9 +147,7 @@ public:
 
     Face(Face* refFace) : point_indexes(refFace->point_indexes) {}
 
-    virtual ~Face() {
-
-    }
+    virtual ~Face() = default;
 };
 
 class Figure {
@@ -189,7 +180,7 @@ public:
             ambientReflection(ambient) , diffuseReflection(diffuse) , specularReflection(specular) ,
             reflectionCoefficient(reflectionCoefficient) {}
 
-    Figure(Figure* refFig) : points(refFig->points) , faces(refFig->faces) ,
+    explicit Figure(Figure* refFig) : points(refFig->points) , faces(refFig->faces) ,
             ambientReflection(refFig->ambientReflection) , diffuseReflection(refFig->diffuseReflection),
             specularReflection(refFig->specularReflection) ,
             reflectionCoefficient(refFig->reflectionCoefficient) {}
@@ -201,9 +192,7 @@ public:
         }
     }
 
-    virtual ~Figure() {
-
-    }
+    virtual ~Figure() = default;
 };
 
 const double posInf = numeric_limits<double>::infinity();
@@ -234,9 +223,7 @@ public:
     Light(const Color &ambientLight, const Color &diffuseLight, const Color &specularLight) : ambientLight(
             ambientLight), diffuseLight(diffuseLight), specularLight(specularLight) {}
 
-    virtual ~Light() {
-
-    }
+    virtual ~Light() = default;
 };
 
 class InfLight: public Light{
@@ -717,7 +704,7 @@ Matrix eyePointTrans(const Vector3D &eyePoint , const Vector3D &viewDir , double
 Point2D doProjection(const Vector3D &point , const double d){
     double x_1 = (d * point.x) / -point.z;
     double y_1 = (d * point.y) / -point.z;
-    return Point2D(x_1 , y_1);
+    return {x_1 , y_1};
 }
 
 void getLinePointIndex(Face &face, Figure* &f, Lines2D &lines , Color &lineColor , const double d){
@@ -1682,12 +1669,6 @@ void clipTriangleOneOutNear(Vector3D &A, Vector3D &B, Vector3D &C, int &indA, in
     newFaces.push_back( Face( { indC , indD , indE } ) );
     newFaces.push_back( Face( { indE , indB , indC } ) );
 
-//    cout << "IndB: " << indB << " Coords: " << B.x << " , " << B.y  << " , " << B.z << endl;
-//    cout << "IndC: " << indC << " Coords: " << C.x << " , " << C.y  << " , " << C.z << endl;
-//    cout << "IndD: " << indD << " Coords: " << D.x << " , " << D.y  << " , " << D.z << endl;
-//    cout << "IndE: " << indE << " Coords: " << E.x << " , " << E.y  << " , " << E.z << endl;
-//    cout << endl;
-
 }
 
 void clipTriangleTwoOutNear(Vector3D &A, Vector3D &B, Vector3D &C, int &indA, int &indB, int &indC, double &dval,
@@ -1733,11 +1714,6 @@ void clipTriangleTwoOutNear(Vector3D &A, Vector3D &B, Vector3D &C, int &indA, in
         indE = static_cast<int>(newPoints.size() - 1);
     }
     newFaces.push_back( Face( { indA , indD , indE } ) );
-
-//    cout << "IndA: " << indA << " Coords: " << A.x << " , " << A.y  << " , " << A.z << endl;
-//    cout << "IndD: " << indD << " Coords: " << D.x << " , " << D.y  << " , " << D.z << endl;
-//    cout << "IndE: " << indE << " Coords: " << E.x << " , " << E.y  << " , " << E.z << endl;
-//    cout << endl;
 
 }
 
@@ -1797,13 +1773,6 @@ void clipTriangleOneOutFar(Vector3D &A, Vector3D &B, Vector3D &C, int &indA, int
     newFaces.push_back( Face( { indB , indE , indD } ) );
     newFaces.push_back( Face( { indB , indC , indE } ) );
 
-//    cout << "Far << " << dval << endl;
-//    cout << "IndB: " << indB << " Coords: " << B.x << " , " << B.y  << " , " << B.z << endl;
-//    cout << "IndC: " << indC << " Coords: " << C.x << " , " << C.y  << " , " << C.z << endl;
-//    cout << "IndD: " << indD << " Coords: " << D.x << " , " << D.y  << " , " << D.z << endl;
-//    cout << "IndE: " << indE << " Coords: " << E.x << " , " << E.y  << " , " << E.z << endl;
-//    cout << endl;
-
 }
 
 void clipTriangleTwoOutFar(Vector3D &A, Vector3D &B, Vector3D &C, int &indA, int &indB, int &indC, double &dval,
@@ -1849,11 +1818,6 @@ void clipTriangleTwoOutFar(Vector3D &A, Vector3D &B, Vector3D &C, int &indA, int
         indE = static_cast<int>(newPoints.size() - 1);
     }
     newFaces.push_back( Face( { indA , indE , indD } ) );
-//    cout << "Far << " << dval << endl;
-//    cout << "IndA: " << indA << " Coords: " << A.x << " , " << A.y  << " , " << A.z << endl;
-//    cout << "IndD: " << indD << " Coords: " << D.x << " , " << D.y  << " , " << D.z << endl;
-//    cout << "IndE: " << indE << " Coords: " << E.x << " , " << E.y  << " , " << E.z << endl;
-//    cout << endl;
 
 }
 
@@ -1911,11 +1875,6 @@ void clipNear(Figure* &originalFigure , vector<Face> &newFaces , double &d_near)
                 indC = static_cast<int>(newPoints.size() - 1);
             }
             newFaces.push_back( Face( { indA , indB , indC } ) );
-//            cout << "Near" << endl;
-//            cout << "IndA: " << indA << " Coords: " << A.x << " , " << A.y  << " , " << A.z << endl;
-//            cout << "IndB: " << indB << " Coords: " << B.x << " , " << B.y  << " , " << B.z << endl;
-//            cout << "IndC: " << indC << " Coords: " << C.x << " , " << C.y  << " , " << C.z << endl;
-//            cout << endl;
             continue;
         }
         // All points are out of range
@@ -3096,7 +3055,7 @@ void draw_zbuf_line( ZBuffer &zBuffer, img::EasyImage &image,
     assert( x0 < image.get_width() && y0 < image.get_height() );
     assert( x1 < image.get_width() && y1 < image.get_height() );
 
-    img::Color newColor = img::Color(lineColor.red , lineColor.green , lineColor.blue);
+    img::Color newColor = img::Color((int)lineColor.red , (int)lineColor.green , (int)lineColor.blue);
     // Vertical line
     if (x0 == x1)
     {
@@ -3198,7 +3157,7 @@ img::EasyImage draw2DZbuffLines (const Lines2D &lines , const int size , vector<
     // Determine x_min , y_min , x_max , y_max
     double x_min = 0, y_min = 0, x_max = 0, y_max = 0;
     // Loop through all the lines
-    for( Line2D l : lines) {
+    for( const Line2D& l : lines) {
         // Assign the points to temp variables
         double p1_x = l.p1.x;
         double p1_y = l.p1.y;
@@ -3476,7 +3435,7 @@ img::EasyImage draw2DZbuffTriag (const int &size , vector<double> &backgroundCol
     // Create the image file
     img::EasyImage image(lround(imageWidth) , lround(imageHeight) , img::Color(bgColor.at(0) , bgColor.at(1) , bgColor.at(2) ));
     // Create Z-Buffer
-    ZBuffer zBuffer(image.get_width() , image.get_height());
+    ZBuffer zBuffer((int)image.get_width() , (int)image.get_height());
     // Determine the scaling factor
     d = 0.95 * (imageWidth / x_range);
     // Calculate for x and y
@@ -3503,6 +3462,58 @@ img::EasyImage draw2DZbuffTriag (const int &size , vector<double> &backgroundCol
         }
     }
     return image;
+}
+
+img::EasyImage blur_image(img::EasyImage &ref , blur_type t , int blur_size){
+    double kernelMatrix [(2 * blur_size) + 1][(2 * blur_size) + 1];
+    double kernelWidth = (2 * blur_size) + 1;
+    if(t == None){
+        return ref;
+    }
+    else if(t == Radial){
+        for (int i = -blur_size; i <= blur_size; ++i) {
+            for (int j = -blur_size; j <= blur_size; ++j) {
+                double kernval = 1 / (kernelWidth * kernelWidth);
+                kernelMatrix[i + blur_size][j + blur_size] = kernval;
+            }
+        }
+    }
+    else if(t == Gaussian){
+        double sum = 0;
+
+        double sigma = std::max((double)blur_size / 2 , 1.0);
+        for (int i = -blur_size; i <= blur_size; ++i) {
+            for (int j = -blur_size; j <= blur_size; ++j) {
+                double ex_num = (-(i * i + j * j));
+                double ex_den = 2 * sigma * sigma;
+                double eexp = pow(M_E, ex_num / ex_den);
+                double kernval = (eexp / (2 * M_PI * sigma * sigma));
+                kernelMatrix[i + blur_size][j + blur_size] = kernval;
+                sum += kernval;
+            }
+        }
+        for (int i = 0; i < kernelWidth; ++i) {
+            for (int j = 0; j < kernelWidth; ++j) {
+                kernelMatrix[i][j] /= sum;
+            }
+        }
+    }
+    for (int i = blur_size; i < (int)ref.get_width() - blur_size; ++i) {
+        for (int j = blur_size; j < (int)ref.get_height() - blur_size; ++j) {
+            img::Color f_col = img::Color(0,0,0);
+            for(int x = -blur_size; x <= blur_size; ++x){
+                for(int y = -blur_size; y <= blur_size; ++y){
+                    double kernVal = kernelMatrix[x + blur_size][y + blur_size];
+                    f_col.red += (ref(i - x, j - y).red) * kernVal;
+                    f_col.green += (ref(i - x, j - y).green) * kernVal;
+                    f_col.blue += (ref(i - x, j - y).blue) * kernVal;
+                }
+            }
+            ref(i , j) = f_col;
+        }
+    }
+    return ref;
+
 }
 
 
@@ -3552,7 +3563,21 @@ img::EasyImage generate_image(const ini::Configuration &configuration)
         Figures3D figures = drawWireframe(size , eye , backgroundcolor , nrFigures , configuration , lights);
         Lines2D lines = doProjection(figures , 1.0);
         // Draw the lines
-        return draw2DZbuffLines( lines , size , backgroundcolor);
+        string btype = configuration["General"]["blurType"].as_string_or_default("None");
+        blur_type bt;
+        int bsize = configuration["General"]["blurSize"];
+        if(btype == "Radial"){
+            bt = Radial;
+        }
+        else if(btype == "Gaussian"){
+            bt = Gaussian;
+        }
+        else{
+            bt = None;
+        }
+        auto im = draw2DZbuffLines( lines , size , backgroundcolor);
+        return blur_image(im , bt , bsize);
+
     }
     // Case: type == "ZBuffering"
     else if(type == "ZBuffering"){
@@ -3670,7 +3695,7 @@ img::EasyImage generate_image(const ini::Configuration &configuration)
 
     }
 
-    return img::EasyImage();
+    return {};
 }
 
 
