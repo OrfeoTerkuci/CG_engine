@@ -14,12 +14,37 @@ set(CMAKE_CXX_FLAGS  "${CMAKE_CXX_FLAGS} ${OWN_GXX_FLAGS}")
 ############################################################
 # List all sources
 ############################################################
+set(geometry_sources
+        src/geometry/shapes.cpp
+)
+
+set(generator_sources
+        src/generators/basic2d.cpp
+        src/generators/draw2d.cpp
+        src/generators/draw3d.cpp
+        src/generators/fractals.cpp
+        src/generators/lSystems3d.cpp
+        src/generators/platonicBodies.cpp
+        src/generators/zBuffering.cpp
+)
+
+set(tooling_sources
+        src/clipping.cpp
+        src/transformations.cpp
+        src/color/color.cpp
+        src/lighting/light.cpp
+)
+
+
 set(engine_sources
-        easy_image.cc
-        engine.cc
-        ini_configuration.cc
-        l_parser/l_parser.cc
-        vector/vector3d.cc
+        src/easy_image.cc
+        src/engine.cc
+        src/ini_configuration.cc
+        src/l_parser/l_parser.cc
+        src/vector/vector3d.cc
+        ${geometry_sources}
+        ${generator_sources}
+        ${tooling_sources}
         )
 ############################################################
 # Create main executable
