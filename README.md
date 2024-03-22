@@ -1,52 +1,41 @@
-## Gequoteerde functionaliteit
+## Main functionality
 
-V: Werkend  
--: Deels werkend met gekende problemen (onderaan beschreven)  
-X: Niet werkend of niet geïmplementeerd  
-(blanco): TODO  
+F: Fully working  
+-: Partially working with known problems (described below)  
+X: Not working or not implemented  
+(blank): TODO
 
+|    | Functionality                | Status |
+|----|------------------------------|:------:|
+| 1  | 2D L-systems                 |   F    |
+|    | With brackets                |   F    |
+|    | Stochastic                   |   X    |
+| 2  | Transformations              |   F    |
+|    | Eye-point                    |   F    |
+|    | Projection                   |   F    |
+| 3  | Platonic Bodies              |   F    |
+|    | Cone and cylinder            |   F    |
+|    | Sphere                       |   F    |
+|    | Torus                        |   F    |
+|    | 3D L-systems                 |   F    |
+| 4  | Z-buffering (lines)          |   F    |
+| 5  | Triangulation                |   F    |
+|    | Z-buffering (triangles)      |   F    |
+| 6  | 3D fractals                  |   F    |
+|    | BuckyBall                    |   F    |
+|    | Menger sponge                |        |
+|    | View Frustum                 |        |
+| 7  | Ambient light                |   F    |
+|    | Diffuse light (infinite)     |   F    |
+|    | Diffuse light (point source) |   F    |
+|    | Specular light               |   F    |
+| 8  | Shadow                       |        |
+|    | Texture mapping              |        |
+| 9  | Spheres and cylinders        |        |
+|    | UV-coordinates               |        |
+|    | Cube mapping                 |        |
+| 10 | Plane                        |        |
+| 11 | Rectangular Plane            |        |
+| 12 | Rectangular Prism            |        |
 
-|   | Functionaliteit           | Status |
-|---|---------------------------|:------:|
-| 1 | 2D L-systemen             | V |
-|   | Met haakjes               | V |
-|   | Stochastisch              | X |
-| 2 | Transformaties            | V |
-|   | Eye-point                 | V |
-|   | Projectie                 | V |
-| 3 | Platonische Lichamen      | V |
-|   | Kegel en cylinder         | V |
-|   | Bol                       | V |
-|   | Torus                     | V |
-|   | 3D L-systemen             | V |
-| 4 | Z-buffering (lijnen)      | V |
-| 5 | Triangulatie              | V |
-|   | Z-buffering (driehoeken)  | V |
-| 6 | 3D fractalen              | V |
-|   | BuckyBall                 | V |
-|   | Mengerspons               |   |
-|   | View Frustum              |   |
-| 7 | Ambient licht             | V |
-|   | Diffuus licht (oneindig)  | V |
-|   | Diffuus licht (puntbron)  | V |
-|   | Speculair licht           | V |
-| 8 | Schaduw                   |   |
-|   | Texture mapping           |   |
-| 9 | Bollen en cylinders       |   |
-|   | UV-coordinaten            |   |
-|   | Cube mapping              |   |
-
-Geïmplementeerde vorm van texture mapping: ...
-
-## Gekende problemen 
-...
-## Niet-gequoteerde functionaliteit
-...
-
-## Extra functionaliteit, niet in de opgaves beschreven
-|    | Functionaliteit           | Status |
-|----|---------------------------|:------:|
-| 10 | Plane                     | V |
-| 11 | Rectangular Plane         | V |
-| 12 | Rectangular Prism         | V |
-
+Implemented form of texture mapping: ...
