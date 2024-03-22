@@ -20,5 +20,9 @@
 figures3D drawWireframe(std::vector<double> &eye, int &nrFigures,
                         const ini::Configuration &configuration, lights3D &lights);
 
+void getViewDir(bool viewCone, const Vector3D &eyePoint,
+                const ini::Configuration &configuration, Vector3D &viewDir,
+                double &dNear, double &dFar, double &hFov,
+                double &aspectRatio);
 
 #endif //ENGINE_WIREFRAMES_H

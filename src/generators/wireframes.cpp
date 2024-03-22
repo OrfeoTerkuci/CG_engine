@@ -1,5 +1,81 @@
 #include "wireframes.h"
 
+void getViewDir(bool viewCone, const Vector3D &eyePoint,
+                const ini::Configuration &configuration, Vector3D &viewDir,
+                double &dNear, double &dFar, double &hFov,
+                double &aspectRatio) {
+    // Get view viewCone components
+    if (viewCone) {
+        // Get view viewCone components
+        std::vector<double> viewDirection = configuration["General"]["viewDirection"].as_double_tuple_or_die();
+        dNear = configuration["General"]["dNear"].as_double_or_default(1.0);
+        dFar = configuration["General"]["dFar"].as_double_or_default(1000.0);
+        hFov = configuration["General"]["hFov"].as_double_or_default(90);
+        aspectRatio = configuration["General"]["aspectRatio"];
+
+        viewDir = Vector3D::point(viewDirection.at(0), viewDirection.at(1),
+                                  viewDirection.at(2));
+    } else {
+        viewDir = -eyePoint;
+    }
+}
+
+void transformLights(lights3D &lights, const Matrix &mEye) {
+    // Transform the lights
+    for (auto *l: lights) {
+        auto infL = dynamic_cast<infLight *>(l);
+        if (infL != nullptr) {
+            infL->ldVector *= mEye;
+            infL->ldVector.normalise();
+        }
+        auto pntL = dynamic_cast<pointLight *>(l);
+        if (pntL != nullptr) {
+            pntL->location *= mEye;
+        }
+    }
+}
+
+void
+parseFigureAttributes(bool lighting, int i, const ini::Configuration &configuration,
+                      std::vector<double> &ambientCoefficient,
+                      std::vector<double> &diffuseCoefficient,
+                      std::vector<double> &specularCoefficient, std::string &figureType,
+                      double &scale, double &rotX, double &rotY, double &rotZ,
+                      std::vector<double> &center, double &reflectionCoefficient) {
+    figureType = configuration["figure" +
+                               std::__cxx11::to_string(i)]["type"].as_string_or_die();
+    scale = configuration["figure" +
+                          std::__cxx11::to_string(i)]["scale"].as_double_or_default(
+            1.0);
+    rotX = configuration["figure" +
+                         std::__cxx11::to_string(i)]["rotateX"].as_double_or_default(0);
+    rotY = configuration["figure" +
+                         std::__cxx11::to_string(i)]["rotateY"].as_double_or_default(0);
+    rotZ = configuration["figure" +
+                         std::__cxx11::to_string(i)]["rotateZ"].as_double_or_default(0);
+    center = configuration["figure" + std::__cxx11::to_string(
+            i)]["center"].as_double_tuple_or_default({0, 0, 0});
+    reflectionCoefficient = configuration[
+            "figure" + std::__cxx11::to_string(i)
+    ]["reflectionCoefficient"].as_double_or_default(0);// Get all attributes
+// Get figure type
+// Get common attributes
+    if (lighting) {
+        ambientCoefficient = configuration[
+                "figure" + std::to_string(i)
+        ]["ambientReflection"].as_double_tuple_or_default({1, 1, 1});
+
+    } else {
+        ambientCoefficient = configuration["figure" + std::to_string(i)]["color"];
+    }
+    diffuseCoefficient = configuration["figure" + std::to_string(
+            i)]["diffuseReflection"].as_double_tuple_or_default(
+            {0, 0, 0});
+    specularCoefficient = configuration["figure" + std::to_string(
+            i)]["specularReflection"].as_double_tuple_or_default(
+            {0, 0, 0});
+}
+
 figures3D drawWireframe(std::vector<double> &eye, int &nrFigures,
                         const ini::Configuration &configuration, lights3D &lights) {
     // Check if lighting
@@ -21,73 +97,29 @@ figures3D drawWireframe(std::vector<double> &eye, int &nrFigures,
     double r;
     Vector3D eyePoint = Vector3D::point(eye.at(0), eye.at(1), eye.at(2));
 
-    // Get view viewCone components
-    if (viewCone) {
-        // Get view viewCone components
-        std::vector<double> viewDirection = configuration["General"]["viewDirection"].as_double_tuple_or_die();
-        dNear = configuration["General"]["dNear"].as_double_or_default(1.0);
-        dFar = configuration["General"]["dFar"].as_double_or_default(1000.0);
-        hFov = configuration["General"]["hFov"].as_double_or_default(90);
-        aspectRatio = configuration["General"]["aspectRatio"];
+    getViewDir(viewCone, eyePoint, configuration, viewDir, dNear, dFar, hFov,
+               aspectRatio);
 
-        viewDir = Vector3D::point(viewDirection.at(0), viewDirection.at(1),
-                                  viewDirection.at(2));
-    } else {
-        viewDir = -eyePoint;
-    }
     Matrix mEye = eyePointTrans(eyePoint, viewDir, theta, phi, r);
-
-    // Transform the lights
-    for (auto *l: lights) {
-        auto infL = dynamic_cast<infLight *>(l);
-        if (infL != nullptr) {
-            infL->ldVector *= mEye;
-            infL->ldVector.normalise();
-        }
-        auto pntL = dynamic_cast<pointLight *>(l);
-        if (pntL != nullptr) {
-            pntL->location *= mEye;
-        }
-    }
+    transformLights(lights, mEye);
 
     // Create figures vector
     figures3D figures;
     // Get figures
     for (int i = 0; i < nrFigures; i++) {
-        // Get all attributes
-        // Get figure type
-        std::string figureType = configuration["figure" +
-                                          std::to_string(i)]["type"].as_string_or_die();
-        // Get common attributes
-        double scale = configuration["figure" +
-                                     std::to_string(i)]["scale"].as_double_or_default(1.0);
-        double rotX = configuration["figure" +
-                                    std::to_string(i)]["rotateX"].as_double_or_default(0);
-        double rotY = configuration["figure" +
-                                    std::to_string(i)]["rotateY"].as_double_or_default(0);
-        double rotZ = configuration["figure" +
-                                    std::to_string(i)]["rotateZ"].as_double_or_default(0);
-        std::vector<double> center = configuration["figure" + std::to_string(
-                i)]["center"].as_double_tuple_or_default({0, 0, 0});
+        figure *newFigure;
+        std::string figureType;
+        double scale;
+        double rotX;
+        double rotY;
+        double rotZ;
+        std::vector<double> center;
+        double reflectionCoefficient;
 
-        double reflectionCoefficient = configuration[
-                "figure" + std::to_string(i)
-        ]["reflectionCoefficient"].as_double_or_default(0);
-
-        if (lighting) {
-            ambientCoefficient = configuration[
-                    "figure" + std::to_string(i)
-            ]["ambientReflection"].as_double_tuple_or_default({1, 1, 1});
-
-        } else {
-            ambientCoefficient = configuration["figure" + std::to_string(i)]["color"];
-        }
-        diffuseCoefficient = configuration["figure" + std::to_string(
-                i)]["diffuseReflection"].as_double_tuple_or_default(
-                {0, 0, 0});
-        specularCoefficient = configuration["figure" + std::to_string(
-                i)]["specularReflection"].as_double_tuple_or_default(
-                {0, 0, 0});
+        parseFigureAttributes(
+                lighting, i, configuration, ambientCoefficient, diffuseCoefficient,
+                specularCoefficient, figureType, scale, rotX, rotY, rotZ, center,
+                reflectionCoefficient);
 
         Matrix m = scaleFigure(scale);
         m *= rotateX((rotX * M_PI) / 180);
@@ -104,16 +136,15 @@ figures3D drawWireframe(std::vector<double> &eye, int &nrFigures,
             int nrLines = configuration["figure" +
                                         std::to_string(i)]["nrLines"].as_int_or_die();
             // Create new LineDrawing figure
-            figure *newFigure = drawLineDrawing(scale, rotX, rotY, rotZ, nrPoints,
-                                                nrLines, configuration,
-                                                ambientCoefficient, center, mEye, i);
+            newFigure = drawLineDrawing(scale, rotX, rotY, rotZ, nrPoints,
+                                        nrLines, configuration,
+                                        ambientCoefficient, center, mEye, i);
             // Add figure to vector of figures
             figures.push_back(newFigure);
         }
             // Figure_type : "Cube"
         else if (figureType == "Cube") {
             // Create new figure
-            figure *newFigure;
             newFigure = createCube(ambientCoefficient, diffuseCoefficient,
                                    specularCoefficient, reflectionCoefficient);
             newFigure->applyTransformation(m);
@@ -122,7 +153,6 @@ figures3D drawWireframe(std::vector<double> &eye, int &nrFigures,
             // Figure_type == "Tetrahedron"
         else if (figureType == "Tetrahedron") {
             // Create new figure
-            figure *newFigure;
             newFigure = createTetrahedron(ambientCoefficient, diffuseCoefficient,
                                           specularCoefficient,
                                           reflectionCoefficient);
@@ -133,7 +163,6 @@ figures3D drawWireframe(std::vector<double> &eye, int &nrFigures,
             // Figure_type == "Octahedron"
         else if (figureType == "Octahedron") {
             // Create new figure
-            figure *newFigure;
             newFigure = createOctahedron(ambientCoefficient, diffuseCoefficient,
                                          specularCoefficient,
                                          reflectionCoefficient);
@@ -143,7 +172,6 @@ figures3D drawWireframe(std::vector<double> &eye, int &nrFigures,
             // Figure_type == "Icosahedron"
         else if (figureType == "Icosahedron") {
             // Create new figure
-            figure *newFigure;
             newFigure = createIcosahedron(ambientCoefficient, diffuseCoefficient,
                                           specularCoefficient,
                                           reflectionCoefficient);
@@ -153,7 +181,6 @@ figures3D drawWireframe(std::vector<double> &eye, int &nrFigures,
             // Figure_type == "Dodecahedron"
         else if (figureType == "Dodecahedron") {
             // Create new figure
-            figure *newFigure;
             newFigure = createDodecahedron(ambientCoefficient, diffuseCoefficient,
                                            specularCoefficient,
                                            reflectionCoefficient);
@@ -162,10 +189,11 @@ figures3D drawWireframe(std::vector<double> &eye, int &nrFigures,
         }
             // Figure_type == "Cone"
         else if (figureType == "Cone") {
-            int n = configuration["figure" + std::to_string(i)]["n"].as_int_or_die();
-            double height = configuration["figure" +
-                                          std::to_string(i)]["height"].as_double_or_die();
-            figure *newFigure;
+            const int n = configuration["figure" +
+                                        std::to_string(i)]["n"].as_int_or_die();
+            const double height = configuration["figure" +
+                                                std::to_string(
+                                                        i)]["height"].as_double_or_die();
             newFigure = createCone(n, height, ambientCoefficient, diffuseCoefficient,
                                    specularCoefficient,
                                    reflectionCoefficient);
@@ -174,10 +202,10 @@ figures3D drawWireframe(std::vector<double> &eye, int &nrFigures,
         }
             // Figure_type == "Cylinder"
         else if (figureType == "Cylinder") {
-            const int n = configuration["figure" + std::to_string(i)]["n"].as_int_or_die();
+            const int n = configuration["figure" +
+                                        std::to_string(i)]["n"].as_int_or_die();
             const double height = configuration["figure" + std::to_string(
                     i)]["height"].as_double_or_die();
-            figure *newFigure;
             newFigure = createCylinder(n, height, ambientCoefficient,
                                        diffuseCoefficient, specularCoefficient,
                                        reflectionCoefficient);
@@ -186,8 +214,8 @@ figures3D drawWireframe(std::vector<double> &eye, int &nrFigures,
         }
             // Figure_type == "Sphere"
         else if (figureType == "Sphere") {
-            const int n = configuration["figure" + std::to_string(i)]["n"].as_int_or_die();
-            figure *newFigure;
+            const int n = configuration["figure" +
+                                        std::to_string(i)]["n"].as_int_or_die();
             newFigure = createSphere(1.0, n, ambientCoefficient, diffuseCoefficient,
                                      specularCoefficient,
                                      reflectionCoefficient);
@@ -197,14 +225,17 @@ figures3D drawWireframe(std::vector<double> &eye, int &nrFigures,
             // Figure_type == "Torus"
         else if (figureType == "Torus") {
             double majorRadius = configuration["figure" +
-                                               std::to_string(i)]["R"].as_double_or_die();
+                                               std::to_string(
+                                                       i)]["R"].as_double_or_die();
             double minorRadius = configuration["figure" +
-                                               std::to_string(i)]["r"].as_double_or_die();
+                                               std::to_string(
+                                                       i)]["r"].as_double_or_die();
             int torusRadialSegments = configuration["figure" +
-                                                    std::to_string(i)]["n"].as_int_or_die();
+                                                    std::to_string(
+                                                            i)]["n"].as_int_or_die();
             int torusTubularSegments = configuration["figure" +
-                                                     std::to_string(i)]["m"].as_int_or_die();
-            figure *newFigure;
+                                                     std::to_string(
+                                                             i)]["m"].as_int_or_die();
             newFigure = createTorus(minorRadius, majorRadius, torusRadialSegments,
                                     torusTubularSegments, ambientCoefficient,
                                     diffuseCoefficient, specularCoefficient,
@@ -221,14 +252,12 @@ figures3D drawWireframe(std::vector<double> &eye, int &nrFigures,
             std::ifstream inputStream(inputFile);
             inputStream >> lSystem;
             inputStream.close();
-            figure *newFigure;
             newFigure = drawSystem3D(lSystem, ambientCoefficient);
             newFigure->applyTransformation(m);
             figures.push_back(newFigure);
         }
             // Figure_type == "BuckyBall"
         else if (figureType == "BuckyBall") {
-            figure *newFigure;
             newFigure = createBuckyBall(ambientCoefficient, diffuseCoefficient,
                                         specularCoefficient,
                                         reflectionCoefficient);
@@ -252,9 +281,9 @@ figures3D drawWireframe(std::vector<double> &eye, int &nrFigures,
                     i)]["nrIterations"].as_int_or_default(0);
             double fractalScale = configuration["figure" + std::to_string(
                     i)]["fractalScale"].as_double_or_default(1);
-            figure *newFigure = createCube(ambientCoefficient, diffuseCoefficient,
-                                           specularCoefficient,
-                                           reflectionCoefficient);
+            newFigure = createCube(ambientCoefficient, diffuseCoefficient,
+                                   specularCoefficient,
+                                   reflectionCoefficient);
             newFigure->applyTransformation(m);
             figures3D newFractal = {newFigure};
             generateFractal(newFractal, nrIterations, fractalScale);
@@ -266,10 +295,10 @@ figures3D drawWireframe(std::vector<double> &eye, int &nrFigures,
                     i)]["nrIterations"].as_int_or_default(0);
             double fractalScale = configuration["figure" + std::to_string(
                     i)]["fractalScale"].as_double_or_default(1);
-            figure *newFigure = createTetrahedron(ambientCoefficient,
-                                                  diffuseCoefficient,
-                                                  specularCoefficient,
-                                                  reflectionCoefficient);
+            newFigure = createTetrahedron(ambientCoefficient,
+                                          diffuseCoefficient,
+                                          specularCoefficient,
+                                          reflectionCoefficient);
             newFigure->applyTransformation(m);
             figures3D newFractal = {newFigure};
             generateFractal(newFractal, nrIterations, fractalScale);
@@ -281,10 +310,10 @@ figures3D drawWireframe(std::vector<double> &eye, int &nrFigures,
                     i)]["nrIterations"].as_int_or_default(0);
             double fractalScale = configuration["figure" + std::to_string(
                     i)]["fractalScale"].as_double_or_default(1);
-            figure *newFigure = createIcosahedron(ambientCoefficient,
-                                                  diffuseCoefficient,
-                                                  specularCoefficient,
-                                                  reflectionCoefficient);
+            newFigure = createIcosahedron(ambientCoefficient,
+                                          diffuseCoefficient,
+                                          specularCoefficient,
+                                          reflectionCoefficient);
             newFigure->applyTransformation(m);
             figures3D newFractal = {newFigure};
             generateFractal(newFractal, nrIterations, fractalScale);
@@ -296,9 +325,9 @@ figures3D drawWireframe(std::vector<double> &eye, int &nrFigures,
                     i)]["nrIterations"].as_int_or_default(0);
             double fractalScale = configuration["figure" + std::to_string(
                     i)]["fractalScale"].as_double_or_default(1);
-            figure *newFigure = createOctahedron(ambientCoefficient, diffuseCoefficient,
-                                                 specularCoefficient,
-                                                 reflectionCoefficient);
+            newFigure = createOctahedron(ambientCoefficient, diffuseCoefficient,
+                                         specularCoefficient,
+                                         reflectionCoefficient);
             newFigure->applyTransformation(m);
             figures3D newFractal = {newFigure};
             generateFractal(newFractal, nrIterations, fractalScale);
@@ -310,10 +339,10 @@ figures3D drawWireframe(std::vector<double> &eye, int &nrFigures,
                     i)]["nrIterations"].as_int_or_default(0);
             double fractalScale = configuration["figure" + std::to_string(
                     i)]["fractalScale"].as_double_or_default(1);
-            figure *newFigure = createDodecahedron(ambientCoefficient,
-                                                   diffuseCoefficient,
-                                                   specularCoefficient,
-                                                   reflectionCoefficient);
+            newFigure = createDodecahedron(ambientCoefficient,
+                                           diffuseCoefficient,
+                                           specularCoefficient,
+                                           reflectionCoefficient);
             newFigure->applyTransformation(m);
             figures3D newFractal = {newFigure};
             generateFractal(newFractal, nrIterations, fractalScale);
@@ -325,9 +354,9 @@ figures3D drawWireframe(std::vector<double> &eye, int &nrFigures,
                     i)]["nrIterations"].as_int_or_default(0);
             double fractalScale = configuration["figure" + std::to_string(
                     i)]["fractalScale"].as_double_or_default(1);
-            figure *newFigure = createBuckyBall(ambientCoefficient, diffuseCoefficient,
-                                                specularCoefficient,
-                                                reflectionCoefficient);
+            newFigure = createBuckyBall(ambientCoefficient, diffuseCoefficient,
+                                        specularCoefficient,
+                                        reflectionCoefficient);
             newFigure->applyTransformation(m);
             figures3D newFractal = {newFigure};
             generateFractal(newFractal, nrIterations, fractalScale);
