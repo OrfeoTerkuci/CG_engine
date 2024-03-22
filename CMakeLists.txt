@@ -26,6 +26,7 @@ set(generator_sources
         src/generators/lSystems3d.cpp
         src/generators/platonicBodies.cpp
         src/generators/zBuffering.cpp
+        src/generators/wireframes.cpp
 )
 
 set(tooling_sources
@@ -104,11 +105,5 @@ set_target_properties("obj_parser_en_voorbeeld" PROPERTIES RUNTIME_OUTPUT_DIRECT
 
 add_executable( "spheres_and_cylinders" ${engine_sources} )
 set_target_properties("spheres_and_cylinders" PROPERTIES RUNTIME_OUTPUT_DIRECTORY "${PROJECT_SOURCE_DIR}/ini/spheres_and_cylinders" )
-
-add_executable( "Examens" ${engine_sources} )
-set_target_properties("Examens" PROPERTIES RUNTIME_OUTPUT_DIRECTORY "${PROJECT_SOURCE_DIR}/ini/Examens" )
-
-add_executable( "image_recognition_test" ${engine_sources} )
-set_target_properties("image_recognition_test" PROPERTIES RUNTIME_OUTPUT_DIRECTORY "${PROJECT_SOURCE_DIR}/ini/image_recognition_test" )
 
 install( TARGETS ${exe_name} DESTINATION ${PROJECT_SOURCE_DIR}/ )
