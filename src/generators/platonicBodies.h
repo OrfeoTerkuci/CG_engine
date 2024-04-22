@@ -38,7 +38,7 @@ void splitTriangle(face &originalTriangle, figure *&originalFigure,
                    std::vector<face> &newFaces);
 
 figure *
-createSphere(__attribute__((unused)) const double &radius, const int &n,
+createSphere(const double &radius, const int &n,
              std::vector<double> &ambientCoefficient,
              std::vector<double> &diffuseCoefficient,
              std::vector<double> &specularCoefficient, double &reflectionCoefficient);

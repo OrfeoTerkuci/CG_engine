@@ -2,6 +2,7 @@
 #include <vector>
 #include "vector/vector3d.h"
 #include "geometry/shapes.h"
+#include <corecrt_math_defines.h>
 
 
 void clipTriangleOneOutNear(Vector3D &a, Vector3D &b, Vector3D &c, int &indB, int &indC,

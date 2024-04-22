@@ -1,4 +1,5 @@
 #include "wireframes.h"
+#include <corecrt_math_defines.h>
 
 void getViewDir(bool viewCone, const Vector3D &eyePoint,
                 const ini::Configuration &configuration, Vector3D &viewDir,
@@ -43,20 +44,20 @@ parseFigureAttributes(bool lighting, int i, const ini::Configuration &configurat
                       double &scale, double &rotX, double &rotY, double &rotZ,
                       std::vector<double> &center, double &reflectionCoefficient) {
     figureType = configuration["figure" +
-                               std::__cxx11::to_string(i)]["type"].as_string_or_die();
+                               std::to_string(i)]["type"].as_string_or_die();
     scale = configuration["figure" +
-                          std::__cxx11::to_string(i)]["scale"].as_double_or_default(
+                          std::to_string(i)]["scale"].as_double_or_default(
             1.0);
     rotX = configuration["figure" +
-                         std::__cxx11::to_string(i)]["rotateX"].as_double_or_default(0);
+                         std::to_string(i)]["rotateX"].as_double_or_default(0);
     rotY = configuration["figure" +
-                         std::__cxx11::to_string(i)]["rotateY"].as_double_or_default(0);
+                         std::to_string(i)]["rotateY"].as_double_or_default(0);
     rotZ = configuration["figure" +
-                         std::__cxx11::to_string(i)]["rotateZ"].as_double_or_default(0);
-    center = configuration["figure" + std::__cxx11::to_string(
+                         std::to_string(i)]["rotateZ"].as_double_or_default(0);
+    center = configuration["figure" + std::to_string(
             i)]["center"].as_double_tuple_or_default({0, 0, 0});
     reflectionCoefficient = configuration[
-            "figure" + std::__cxx11::to_string(i)
+            "figure" + std::to_string(i)
     ]["reflectionCoefficient"].as_double_or_default(0);// Get all attributes
 // Get figure type
 // Get common attributes

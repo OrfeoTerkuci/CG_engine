@@ -1,4 +1,5 @@
 #include "draw3d.h"
+#include <corecrt_math_defines.h>
 
 figure *
 drawLineDrawing(double &scale, double &rotX, double &rotY, double &rotZ, int &nrPoints,

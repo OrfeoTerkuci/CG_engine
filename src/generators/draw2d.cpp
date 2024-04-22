@@ -1,4 +1,5 @@
 #include "draw2d.h"
+#include <corecrt_math_defines.h>
 
 img::EasyImage draw2DLines(const lines2D &lines, const int size, std::vector<double> &backgroundColor) {
     // Declare colors vector

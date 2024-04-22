@@ -1,4 +1,5 @@
 #include "platonicBodies.h"
+#include <corecrt_math_defines.h>
 
 
 figure *createCube(std::vector<double> &ambientCoefficient,
@@ -20,12 +21,16 @@ figure *createCube(std::vector<double> &ambientCoefficient,
     };
     // Create all the points
     std::vector<Vector3D> points;
-    for (int i = 0; i < 8; ++i) {
+    points.reserve(8);
+    for (int i = 0; i < 8; ++i)
+    {
         points.push_back(Vector3D::point(pointsT[0][i], pointsT[1][i], pointsT[2][i]));
     }
     // Create all the faces
     std::vector<face> faces;
-    for (int j = 0; j < 6; ++j) {
+    faces.reserve(6);
+    for (int j = 0; j < 6; ++j)
+    {
         faces.push_back(face({facesT[0][j], facesT[1][j], facesT[2][j], facesT[3][j]}));
     }
     // Create new figure
@@ -54,13 +59,17 @@ createTetrahedron(std::vector<double> &ambientCoefficient,
     };
     // Create all the points
     std::vector<Vector3D> points;
-    for (int i = 0; i < 4; ++i) {
+    points.reserve(4);
+    for (int i = 0; i < 4; ++i)
+    {
         points.push_back(
                 Vector3D::point(pointsT[0][i], pointsT[1][i], pointsT[2][i]));
     }
     // Create faces
     std::vector<face> faces;
-    for (int j = 0; j < 4; ++j) {
+    faces.reserve(4);
+    for (int j = 0; j < 4; ++j)
+    {
         faces.push_back(face({facesT[0][j], facesT[1][j], facesT[2][j]}));
     }
     // Create new figure
@@ -90,13 +99,17 @@ createOctahedron(std::vector<double> &ambientCoefficient,
     };
     // Create all the points
     std::vector<Vector3D> points;
-    for (int i = 0; i < 6; ++i) {
+    points.reserve(6);
+    for (int i = 0; i < 6; ++i)
+    {
         points.push_back(
                 Vector3D::point(pointsT[0][i], pointsT[1][i], pointsT[2][i]));
     }
     // Create faces
     std::vector<face> faces;
-    for (int j = 0; j < 8; ++j) {
+    faces.reserve(8);
+    for (int j = 0; j < 8; ++j)
+    {
         faces.push_back(face({facesT[0][j], facesT[1][j], facesT[2][j]}));
     }
     // Create new figure
@@ -143,13 +156,17 @@ createIcosahedron(std::vector<double> &ambientCoefficient,
 
     // Create all the points
     std::vector<Vector3D> points;
-    for (int i = 0; i < 12; ++i) {
+    points.reserve(12);
+    for (int i = 0; i < 12; ++i)
+    {
         points.push_back(
                 Vector3D::point(pointsT[0][i], pointsT[1][i], pointsT[2][i]));
     }
     // Create faces
     std::vector<face> faces;
-    for (int j = 0; j < 20; ++j) {
+    faces.reserve(20);
+    for (int j = 0; j < 20; ++j)
+    {
         faces.push_back(face({facesT[0][j], facesT[1][j], facesT[2][j]}));
     }
     // Create new figure
@@ -193,12 +210,16 @@ createDodecahedron(std::vector<double> &ambientCoefficient,
     }
     // Create all the points
     std::vector<Vector3D> points;
-    for (int i = 0; i < 20; ++i) {
+    points.reserve(20);
+    for (int i = 0; i < 20; ++i)
+    {
         points.push_back(Vector3D::point(pointsT[0][i], pointsT[1][i], pointsT[2][i]));
     }
     // Create faces
     std::vector<face> faces;
-    for (int j = 0; j < 12; ++j) {
+    faces.reserve(12);
+    for (int j = 0; j < 12; ++j)
+    {
         faces.push_back(face({facesT[0][j], facesT[1][j], facesT[2][j], facesT[3][j],
                               facesT[4][j]}));
     }
@@ -241,7 +262,7 @@ void splitTriangle(face &originalTriangle, figure *&originalFigure,
 }
 
 figure *
-createSphere(__attribute__((unused)) const double &radius, const int &n,
+createSphere(const double &radius, const int &n,
              std::vector<double> &ambientCoefficient,
              std::vector<double> &diffuseCoefficient,
              std::vector<double> &specularCoefficient, double &reflectionCoefficient) {

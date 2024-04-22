@@ -31,7 +31,7 @@ public:
     // Direction of lighting
     Vector3D ldVector;
 
-    __attribute__((unused)) infLight(const color &ambientLight,
+    infLight(const color &ambientLight,
                                      const color &diffuseLight,
                                      const color &specularLight,
                                      const Vector3D &ldVector)
@@ -52,7 +52,7 @@ public:
     // The angle of the spotlight
     double spotAngle;
 
-    __attribute__((unused)) pointLight(const color &ambientLight,
+    pointLight(const color &ambientLight,
                                        const color &diffuseLight,
                                        const color &specularLight,
                                        const Vector3D &location, double spotAngle)

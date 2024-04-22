@@ -1,4 +1,5 @@
 #include "lSystems3d.h"
+#include <corecrt_math_defines.h>
 
 std::string
 getEndString3D(const LParser::LSystem3D &lSystem, std::string &startingString,

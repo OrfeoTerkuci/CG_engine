@@ -13,6 +13,7 @@
 #include "generators/basic2d.h"
 #include "generators/zBuffering.h"
 #include "generators/wireframes.h"
+#include <corecrt_math_defines.h>
 
 using namespace std;
 
