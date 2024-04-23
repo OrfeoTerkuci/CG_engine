@@ -1,10 +1,10 @@
 #ifndef ENGINE_BASIC2D_H
 #define ENGINE_BASIC2D_H
 
-#include <vector>
-#include <cmath>
-#include "../easy_image.h"
 #include "../color/color.h"
+#include "../easy_image.h"
+#include <cmath>
+#include <vector>
 
 img::EasyImage createColorRectangle(int &width, int &height);
 
@@ -25,4 +25,4 @@ img::EasyImage createDiamond(int &imageWidth, int &imageHeight, int &linesNumber
                              std::vector<double> &backgroundColor,
                              std::vector<double> &lineColor);
 
-#endif //ENGINE_BASIC2D_H
+#endif // ENGINE_BASIC2D_H

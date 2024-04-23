@@ -1,19 +1,19 @@
 #ifndef ENGINE_WIREFRAMES_H
 #define ENGINE_WIREFRAMES_H
 
-#include <vector>
-#include <iostream>
-#include "../ini_configuration.h"
-#include "../geometry/shapes.h"
-#include "../lighting/light.h"
-#include "wireframes.h"
-#include "../transformations.h"
 #include "../clipping.h"
-#include "platonicBodies.h"
-#include "fractals.h"
+#include "../geometry/shapes.h"
+#include "../ini_configuration.h"
 #include "../l_parser/l_parser.h"
+#include "../lighting/light.h"
+#include "../transformations.h"
 #include "draw3d.h"
+#include "fractals.h"
 #include "lSystems3D.h"
+#include "platonicBodies.h"
+#include "wireframes.h"
+#include <iostream>
+#include <vector>
 
 #include <fstream>
 
@@ -25,4 +25,4 @@ void getViewDir(bool viewCone, const Vector3D &eyePoint,
                 double &dNear, double &dFar, double &hFov,
                 double &aspectRatio);
 
-#endif //ENGINE_WIREFRAMES_H
+#endif // ENGINE_WIREFRAMES_H

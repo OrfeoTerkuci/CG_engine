@@ -1,19 +1,18 @@
 #ifndef ENGINE_FRACTALS_H
 #define ENGINE_FRACTALS_H
 
-#include <vector>
-#include <map>
 #include "platonicBodies.h"
+#include <map>
+#include <vector>
 
-void
-insertToPentagon(int indexA, int indexD, int indexI,
-                 std::map<int, std::vector<int> > &pentagons);
+void insertToPentagon(int indexA, int indexD, int indexI,
+                      std::map<int, std::vector<int>> &pentagons);
 
 int isElementOf(std::vector<Vector3D> &points, Vector3D &p);
 
 void splitTriangleHexagon(face &originalTriangle, figure *&originalFigure,
                           std::vector<face> &newFaces,
-                          std::map<int, std::vector<int> > &pentagons,
+                          std::map<int, std::vector<int>> &pentagons,
                           std::vector<Vector3D> &newPoints);
 
 figure *
@@ -31,4 +30,4 @@ createMengerSponge(int nrIterations, Matrix &m,
 
 void generateFractal(figures3D &fractal, int nrIterations, double scale);
 
-#endif //ENGINE_FRACTALS_H
+#endif // ENGINE_FRACTALS_H

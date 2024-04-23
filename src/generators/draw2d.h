@@ -1,12 +1,12 @@
 #ifndef ENGINE_DRAW2D_H
 #define ENGINE_DRAW2D_H
 
-#include <vector>
-#include <cmath>
-#include "../easy_image.h"
 #include "../color/color.h"
+#include "../easy_image.h"
 #include "../geometry/shapes.h"
 #include "../l_parser/l_parser.h"
+#include <cmath>
+#include <vector>
 
 img::EasyImage draw2DLines(const lines2D &lines, const int size, std::vector<double> &backgroundColor);
 
@@ -20,4 +20,4 @@ createSystemLines(const LParser::LSystem2D &l_system, lines2D &lines, std::strin
 lines2D drawSystem2D(const LParser::LSystem2D &l_system, const int &size, std::vector<double> &backgroundColor,
                      std::vector<double> &lineColor);
 
-#endif //ENGINE_DRAW2D_H
+#endif // ENGINE_DRAW2D_H

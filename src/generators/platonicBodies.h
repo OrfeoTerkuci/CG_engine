@@ -1,9 +1,8 @@
 #ifndef ENGINE_PLATONICBODIES_H
 #define ENGINE_PLATONICBODIES_H
 
-#include <vector>
 #include "../transformations.h"
-
+#include <vector>
 
 figure *createCube(std::vector<double> &ambientCoefficient,
                    std::vector<double> &diffuseCoefficient,
@@ -61,4 +60,4 @@ figure *createTorus(const double &r, const double &rBig, const int &n, const int
                     std::vector<double> &specularCoefficient,
                     double &reflectionCoefficient);
 
-#endif //ENGINE_PLATONICBODIES_H
+#endif // ENGINE_PLATONICBODIES_H

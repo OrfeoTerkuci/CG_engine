@@ -1,10 +1,11 @@
 #ifndef ENGINE_COLOR_H
 #define ENGINE_COLOR_H
 
-#include <vector>
 #include <cmath>
+#include <vector>
 
-class color {
+class color
+{
 public:
     double red;
     double green;
@@ -17,9 +18,9 @@ public:
      * @param blue Value of blue component
      */
     color(double red, double green, double blue) : red(red), green(green),
-                                                   blue(blue) {};
+                                                   blue(blue){};
 
-    explicit color(std::vector<double> newColor) : red(newColor.at(0)), green(newColor.at(1)), blue(newColor.at(2)) {};
+    explicit color(std::vector<double> newColor) : red(newColor.at(0)), green(newColor.at(1)), blue(newColor.at(2)){};
 
     color() : red(0), green(0), blue(0) {}
 
@@ -34,4 +35,4 @@ public:
 
 std::vector<unsigned int> scaleColors(std::vector<double> &originalColor);
 
-#endif //ENGINE_COLOR_H
+#endif // ENGINE_COLOR_H

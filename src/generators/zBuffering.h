@@ -1,30 +1,26 @@
 #ifndef ENGINE_ZBUFFERING_H
 #define ENGINE_ZBUFFERING_H
 
-
-#include <algorithm>
-#include <limits>
-#include <vector>
-#include <cassert>
 #include "../clipping.h"
 #include "../easy_image.h"
 #include "../lighting/light.h"
 #include "../transformations.h"
+#include <algorithm>
+#include <cassert>
+#include <limits>
+#include <vector>
 
 const double posInf = std::numeric_limits<double>::infinity();
 const double negInf = -std::numeric_limits<double>::infinity();
 
-class zBuffer : public std::vector<std::vector<double> > {
+class zBuffer : public std::vector<std::vector<double>>
+{
 public:
-
     zBuffer(int width, int height);
-
 };
-
 
 void getProjectedPoints(figures3D &figs, double &d, double &xRange, double &yRange,
                         double &xMin, double &yMin, double &xMax, double &yMax);
-
 
 double
 calculateInvZ(unsigned int i, unsigned int iMin, unsigned int iMax, const double &z0,
@@ -56,5 +52,4 @@ draw2DzBufferTriangle(const int &size, std::vector<double> &backgroundColor,
                       figures3D &figures,
                       lights3D &lights);
 
-
-#endif //ENGINE_ZBUFFERING_H
+#endif // ENGINE_ZBUFFERING_H

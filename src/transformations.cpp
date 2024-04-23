@@ -1,6 +1,7 @@
 #include "transformations.h"
 
-Matrix scaleFigure(const double scale) {
+Matrix scaleFigure(const double scale)
+{
     Matrix s;
     s(1, 1) = scale;
     s(2, 2) = scale;
@@ -9,7 +10,8 @@ Matrix scaleFigure(const double scale) {
     return s;
 }
 
-Matrix rotateX(const double angle) {
+Matrix rotateX(const double angle)
+{
     Matrix mX;
     mX(2, 2) = cos(angle);
     mX(2, 3) = sin(angle);
@@ -18,7 +20,8 @@ Matrix rotateX(const double angle) {
     return mX;
 }
 
-Matrix rotateY(const double angle) {
+Matrix rotateY(const double angle)
+{
     Matrix mY;
     mY(1, 1) = cos(angle);
     mY(1, 3) = -sin(angle);
@@ -27,7 +30,8 @@ Matrix rotateY(const double angle) {
     return mY;
 }
 
-Matrix rotateZ(const double angle) {
+Matrix rotateZ(const double angle)
+{
     Matrix mZ;
     mZ(1, 1) = cos(angle);
     mZ(1, 2) = sin(angle);
@@ -36,7 +40,8 @@ Matrix rotateZ(const double angle) {
     return mZ;
 }
 
-Matrix translate(const Vector3D &vector) {
+Matrix translate(const Vector3D &vector)
+{
     Matrix t;
     t(4, 1) = vector.x;
     t(4, 2) = vector.y;
@@ -44,7 +49,8 @@ Matrix translate(const Vector3D &vector) {
     return t;
 }
 
-void toPolar(const Vector3D &point, double &theta, double &phi, double &r) {
+void toPolar(const Vector3D &point, double &theta, double &phi, double &r)
+{
     // Get the points
     double x = point.x;
     double y = point.y;
@@ -54,15 +60,19 @@ void toPolar(const Vector3D &point, double &theta, double &phi, double &r) {
     // Calculate theta
     theta = atan2(y, x);
     // Calculate phi
-    if (r != 0) {
+    if (r != 0)
+    {
         phi = acos(z / r);
-    } else {
+    }
+    else
+    {
         phi = 0;
     }
 }
 
 Matrix eyePointTrans(const Vector3D &eyePoint, const Vector3D &viewDir, double &theta,
-                     double &phi, double &r) {
+                     double &phi, double &r)
+{
     // Make vector
     double dR;
     toPolar(eyePoint, theta, phi, r);
@@ -82,18 +92,21 @@ Matrix eyePointTrans(const Vector3D &eyePoint, const Vector3D &viewDir, double &
     return m;
 }
 
-point2D doProjection(const Vector3D &point, const double d) {
+point2D doProjection(const Vector3D &point, const double d)
+{
     double x1 = (d * point.x) / -point.z;
     double y1 = (d * point.y) / -point.z;
     return {x1, y1};
 }
 
 void getLinePointIndex(face &face, figure *&f, lines2D &lines, color &lineColor,
-                       const double d) {
+                       const double d)
+{
     // Create new variables
     int bIndex, eIndex;
 
-    for (unsigned long i = 0; i < face.pointIndexes.size(); ++i) {
+    for (unsigned long i = 0; i < face.pointIndexes.size(); ++i)
+    {
         // Get begin and end index
         bIndex = face.pointIndexes.at(i);
         eIndex = face.pointIndexes.at(i == face.pointIndexes.size() - 1 ? 0 : i + 1);
@@ -105,18 +118,21 @@ void getLinePointIndex(face &face, figure *&f, lines2D &lines, color &lineColor,
         point2D newEndP = doProjection(endP, d);
         // Create new line
         line2D newLine(newBeginP, newEndP, lineColor, beginP.z, endP.z);
-        //newLine.z1 = beginP.z;
-        //newLine.z2 = endP.z;
+        // newLine.z1 = beginP.z;
+        // newLine.z2 = endP.z;
         lines.push_back(newLine);
     }
 }
 
-lines2D doProjection(figures3D &figs, const double d) {
+lines2D doProjection(figures3D &figs, const double d)
+{
     lines2D lines;
     color color;
-    for (figure *f: figs) {
+    for (figure *f : figs)
+    {
         color = f->ambientReflection + f->diffuseReflection + f->specularReflection;
-        for (face face: f->faces) {
+        for (face face : f->faces)
+        {
             // Get points index - loop through
             getLinePointIndex(face, f, lines, color, d);
         }

@@ -1,18 +1,21 @@
 #include "lSystems3d.h"
-#include <corecrt_math_defines.h>
 
 std::string
 getEndString3D(const LParser::LSystem3D &lSystem, std::string &startingString,
-               std::string &endingString) {
+               std::string &endingString)
+{
     // Replace symbols
-    for (char c: startingString) {
+    for (char c : startingString)
+    {
         // Add the operators
         if (c == '-' || c == '+' || c == '(' || c == ')' || c == '^' || c == '&' ||
-            c == '/' || c == '\\' || c == '|') {
+            c == '/' || c == '\\' || c == '|')
+        {
             endingString += c;
         }
-            // Replace the string
-        else {
+        // Replace the string
+        else
+        {
             endingString += lSystem.get_replacement(c);
         }
     }
@@ -25,7 +28,8 @@ getEndString3D(const LParser::LSystem3D &lSystem, std::string &startingString,
 figure *
 createSystemLines3D(const LParser::LSystem3D &lSystem, std::string &startingString,
                     double &angle, std::vector<double> &lineColor,
-                    Vector3D &currentPoint, int currentC) {
+                    Vector3D &currentPoint, int currentC)
+{
     // Create variables to store the current x and y coordinate
     std::vector<double> currentX;
     std::vector<double> currentY;
@@ -52,9 +56,11 @@ createSystemLines3D(const LParser::LSystem3D &lSystem, std::string &startingStri
     std::vector<int> currentIndex;
     // Loop through characters in initiating string
     int count = 0;
-    for (int i = currentC; i < startingString.length(); i++) {
+    for (int i = currentC; i < startingString.length(); i++)
+    {
         // Rudder left
-        if (startingString[i] == '+') {
+        if (startingString[i] == '+')
+        {
             // Calculate the new orientations
             hNew = (h * cos(angle) + l * sin(angle));
             lNew = (l * cos(angle) - h * sin(angle));
@@ -62,8 +68,9 @@ createSystemLines3D(const LParser::LSystem3D &lSystem, std::string &startingStri
             h = hNew;
             l = lNew;
         }
-            // Rudder right
-        else if (startingString[i] == '-') {
+        // Rudder right
+        else if (startingString[i] == '-')
+        {
             // Calculate the new orientations
             hNew = (h * cos(-angle) + l * sin(-angle));
             lNew = (l * cos(-angle) - h * sin(-angle));
@@ -71,8 +78,9 @@ createSystemLines3D(const LParser::LSystem3D &lSystem, std::string &startingStri
             h = hNew;
             l = lNew;
         }
-            // Pitch up
-        else if (startingString[i] == '^') {
+        // Pitch up
+        else if (startingString[i] == '^')
+        {
             // Calculate the new orientations
             hNew = (h * cos(angle) + u * sin(angle));
             uNew = (u * cos(angle) - h * sin(angle));
@@ -80,8 +88,9 @@ createSystemLines3D(const LParser::LSystem3D &lSystem, std::string &startingStri
             h = hNew;
             u = uNew;
         }
-            // Pitch down
-        else if (startingString[i] == '&') {
+        // Pitch down
+        else if (startingString[i] == '&')
+        {
             // Calculate the new orientations
             hNew = (h * cos(-angle) + u * sin(-angle));
             uNew = (u * cos(-angle) - h * sin(-angle));
@@ -89,8 +98,9 @@ createSystemLines3D(const LParser::LSystem3D &lSystem, std::string &startingStri
             h = hNew;
             u = uNew;
         }
-            // Roll left
-        else if (startingString[i] == '\\') {
+        // Roll left
+        else if (startingString[i] == '\\')
+        {
             // Calculate the new orientations
             lNew = (l * cos(angle) - u * sin(angle));
             uNew = (l * sin(angle) + u * cos(angle));
@@ -98,8 +108,9 @@ createSystemLines3D(const LParser::LSystem3D &lSystem, std::string &startingStri
             l = lNew;
             u = uNew;
         }
-            // Roll right
-        else if (startingString[i] == '/') {
+        // Roll right
+        else if (startingString[i] == '/')
+        {
             // Calculate the new orientations
             lNew = (l * cos(-angle) - u * sin(-angle));
             uNew = (l * sin(-angle) + u * cos(-angle));
@@ -107,11 +118,14 @@ createSystemLines3D(const LParser::LSystem3D &lSystem, std::string &startingStri
             l = lNew;
             u = uNew;
         }
-            // Turn around
-        else if (startingString[i] == '|') {
+        // Turn around
+        else if (startingString[i] == '|')
+        {
             h = -h;
             l = -l;
-        } else if (startingString[i] == '(') {
+        }
+        else if (startingString[i] == '(')
+        {
             // Save coordinates, draw everything within the bracket, return to saved coordinates
             currentX.push_back(currentPoint.x);
             currentY.push_back(currentPoint.y);
@@ -120,7 +134,9 @@ createSystemLines3D(const LParser::LSystem3D &lSystem, std::string &startingStri
             currentL.push_back(l);
             currentU.push_back(u);
             currentIndex.push_back(count);
-        } else if (startingString[i] == ')') {
+        }
+        else if (startingString[i] == ')')
+        {
 
             currentPoint.x = currentX.back();
             currentX.pop_back();
@@ -143,23 +159,24 @@ createSystemLines3D(const LParser::LSystem3D &lSystem, std::string &startingStri
             count = currentIndex.back();
             currentIndex.pop_back();
         }
-            // If we must draw
-        else if (lSystem.draw(startingString[i])) {
+        // If we must draw
+        else if (lSystem.draw(startingString[i]))
+        {
             // Create new points
             currentPoint += h;
             Vector3D newPoint = Vector3D::point(currentPoint);
             points.push_back(newPoint);
             // Create new faces (the lines)
-            faces.push_back(face({count, (int) points.size() - 1}));
-            count = (int) points.size() - 1;
+            faces.push_back(face({count, (int)points.size() - 1}));
+            count = (int)points.size() - 1;
         }
-            // If we mustn't draw
-        else {
+        // If we mustn't draw
+        else
+        {
             currentPoint += h;
             Vector3D newPoint = Vector3D::point(currentPoint);
             points.push_back(currentPoint);
         }
-
     }
     // Create the new figure
     newFigure = new figure(points, faces,
@@ -168,7 +185,8 @@ createSystemLines3D(const LParser::LSystem3D &lSystem, std::string &startingStri
 }
 
 figure *
-drawSystem3D(const LParser::LSystem3D &lSystem, std::vector<double> &lineColor) {
+drawSystem3D(const LParser::LSystem3D &lSystem, std::vector<double> &lineColor)
+{
     // Get all the components of the LSystem3D
     double angle = lSystem.get_angle();
 
@@ -182,7 +200,8 @@ drawSystem3D(const LParser::LSystem3D &lSystem, std::vector<double> &lineColor) 
     std::string startingString = lSystem.get_initiator();
     std::string endingString;
     // Replace symbols
-    for (int i = 0; i < nrIterations; i++) {
+    for (int i = 0; i < nrIterations; i++)
+    {
         startingString = getEndString3D(lSystem, startingString, endingString);
     }
     Vector3D currentPoint = Vector3D::point(0, 0, 0);

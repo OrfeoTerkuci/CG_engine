@@ -1,9 +1,9 @@
 #ifndef ENGINE_TRANSFORMATIONS_H
 #define ENGINE_TRANSFORMATIONS_H
 
-#include <cmath>
-#include "vector/vector3d.h"
 #include "geometry/shapes.h"
+#include "vector/vector3d.h"
+#include <cmath>
 
 Matrix scaleFigure(double scale);
 
@@ -27,4 +27,4 @@ void getLinePointIndex(face &face, figure *&f, lines2D &lines, color &lineColor,
 
 lines2D doProjection(figures3D &figs, double d);
 
-#endif //ENGINE_TRANSFORMATIONS_H
+#endif // ENGINE_TRANSFORMATIONS_H

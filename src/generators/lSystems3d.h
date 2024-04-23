@@ -1,11 +1,11 @@
 #ifndef ENGINE_LSYSTEMS3D_H
 #define ENGINE_LSYSTEMS3D_H
 
-#include <vector>
-#include <cmath>
+#include "../geometry/shapes.h"
 #include "../l_parser/l_parser.h"
 #include "../vector/vector3d.h"
-#include "../geometry/shapes.h"
+#include <cmath>
+#include <vector>
 
 std::string
 getEndString3D(const LParser::LSystem3D &lSystem, std::string &startingString,
@@ -19,5 +19,4 @@ createSystemLines3D(const LParser::LSystem3D &lSystem, std::string &startingStri
 figure *
 drawSystem3D(const LParser::LSystem3D &lSystem, std::vector<double> &lineColor);
 
-
-#endif //ENGINE_LSYSTEMS3D_H
+#endif // ENGINE_LSYSTEMS3D_H
