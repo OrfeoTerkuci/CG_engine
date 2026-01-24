@@ -119,7 +119,7 @@ void parseLights(const ini::Configuration &configuration, lights3D &lights)
 
 figures3D drawFigures(const ini::Configuration &configuration, vector<double> &eye,
                       int nrFigures, lights3D &lights)
-{ // Draw the wireframe
+{
     auto *newLight = new light(
         light(color(1.0, 1.0, 1.0), color(0, 0, 0), color(0, 0, 0)));
     lights = {newLight};
@@ -128,127 +128,92 @@ figures3D drawFigures(const ini::Configuration &configuration, vector<double> &e
     return figures;
 }
 
+img::EasyImage generate_lsystem(const ini::Configuration &configuration)
+{
+    int size = configuration["General"]["size"].as_int_or_die();
+    vector<double> backgroundColor = configuration["General"]["backgroundcolor"].as_double_tuple_or_die();
+    string inputFilename = configuration["2DLSystem"]["inputfile"].as_string_or_die();
+    vector<double> lineColor = configuration["2DLSystem"]["color"].as_double_tuple_or_die();
+
+    LParser::LSystem2D lSystem;
+    ifstream inputStream(inputFilename);
+    inputStream >> lSystem;
+    inputStream.close();
+    return draw2DLines(drawSystem2D(lSystem, size, backgroundColor, lineColor),
+                       size, backgroundColor);
+}
+
+img::EasyImage generate_wireframe(const ini::Configuration &configuration, lights3D &lights)
+{
+    int size = configuration["General"]["size"].as_int_or_die();
+    vector<double> eye = configuration["General"]["eye"].as_double_tuple_or_die();
+    vector<double> backgroundColor = configuration["General"]["backgroundcolor"].as_double_tuple_or_die();
+    int nrFigures = configuration["General"]["nrFigures"].as_int_or_die();
+    figures3D figures = drawFigures(configuration, eye, nrFigures, lights);
+    lines2D lines = doProjection(figures, 1.0);
+    return draw2DLines(lines,
+                       size, backgroundColor);
+}
+
+img::EasyImage generate_buffered_wireframe(const ini::Configuration &configuration, lights3D &lights)
+{
+    int size = configuration["General"]["size"].as_int_or_die();
+    vector<double> eye = configuration["General"]["eye"].as_double_tuple_or_die();
+    vector<double> backgroundColor = configuration["General"]["backgroundcolor"].as_double_tuple_or_die();
+    int nrFigures = configuration["General"]["nrFigures"].as_int_or_die();
+    figures3D figures = drawFigures(configuration, eye, nrFigures, lights);
+    lines2D lines = doProjection(figures, 1.0);
+    return draw2DzBufferLines(lines, size, backgroundColor);
+}
+
+img::EasyImage generate_triangle_buffer(const ini::Configuration &configuration, lights3D &lights)
+{
+    int size = configuration["General"]["size"].as_int_or_die();
+    vector<double> eye = configuration["General"]["eye"].as_double_tuple_or_die();
+    vector<double> backgroundColor = configuration["General"]["backgroundcolor"].as_double_tuple_or_die();
+    int nrFigures = configuration["General"]["nrFigures"].as_int_or_die();
+    figures3D figures = drawFigures(configuration, eye, nrFigures, lights);
+    return draw2DzBufferTriangle(size, backgroundColor, figures, lights);
+}
+
+img::EasyImage generate_lighted_buffer(const ini::Configuration &configuration, lights3D &lights)
+{
+    int size = configuration["General"]["size"].as_int_or_die();
+    vector<double> eye = configuration["General"]["eye"].as_double_tuple_or_die();
+    vector<double> backgroundColor = configuration["General"]["backgroundcolor"].as_double_tuple_or_die();
+    int nrFigures = configuration["General"]["nrFigures"].as_int_or_die();
+
+    parseLights(configuration, lights);
+    figures3D figures = drawWireframe(eye, nrFigures,
+                                      configuration, lights);
+    return draw2DzBufferTriangle(size, backgroundColor, figures, lights);
+}
+
 img::EasyImage generateImage(const ini::Configuration &configuration)
 {
-    // Get type
     string type = configuration["General"]["type"].as_string_or_die();
-    vector<double> backgroundColor;
-    vector<double> eye;
-    vector<double> lineColor;
-    lights3D lights;
-    int nrFigures;
-    int size;
 
-    // Case : type == "2DLSystem"
+    lights3D lights;
+
     if (type == "2DLSystem")
     {
-        size = configuration["General"]["size"].as_int_or_die();
-        backgroundColor = configuration["General"]["backgroundcolor"].as_double_tuple_or_die();
-        string inputFilename = configuration["2DLSystem"]["inputfile"].as_string_or_die();
-        lineColor = configuration["2DLSystem"]["color"].as_double_tuple_or_die();
-        // Initialize the parser
-        LParser::LSystem2D lSystem;
-        ifstream inputStream(inputFilename);
-        inputStream >> lSystem;
-        inputStream.close();
-        return draw2DLines(drawSystem2D(lSystem, size, backgroundColor, lineColor),
-                           size, backgroundColor);
+        return generate_lsystem(configuration);
     }
-    // Case: type == "Wireframe"
     else if (type == "Wireframe")
     {
-        // Get general properties
-        size = configuration["General"]["size"].as_int_or_die();
-        eye = configuration["General"]["eye"].as_double_tuple_or_die();
-        backgroundColor = configuration["General"]["backgroundcolor"].as_double_tuple_or_die();
-        nrFigures = configuration["General"]["nrFigures"].as_int_or_die();
-        figures3D figures = drawFigures(configuration, eye, nrFigures, lights);
-        lines2D lines = doProjection(figures, 1.0);
-        return draw2DLines(lines,
-                           size, backgroundColor);
+        return generate_wireframe(configuration, lights);
     }
-    // Case: type == "ZBufferedWireframe"
     else if (type == "ZBufferedWireframe")
     {
-        // Get general properties
-        size = configuration["General"]["size"].as_int_or_die();
-        eye = configuration["General"]["eye"].as_double_tuple_or_die();
-        backgroundColor = configuration["General"]["backgroundcolor"].as_double_tuple_or_die();
-        nrFigures = configuration["General"]["nrFigures"].as_int_or_die();
-        figures3D figures = drawFigures(configuration, eye, nrFigures, lights);
-        lines2D lines = doProjection(figures, 1.0);
-        return draw2DzBufferLines(lines, size, backgroundColor);
+        return generate_buffered_wireframe(configuration, lights);
     }
-    // Case: type == "ZBuffering"
     else if (type == "ZBuffering")
     {
-        // Get general properties
-        size = configuration["General"]["size"].as_int_or_die();
-        eye = configuration["General"]["eye"].as_double_tuple_or_die();
-        backgroundColor = configuration["General"]["backgroundcolor"].as_double_tuple_or_die();
-        nrFigures = configuration["General"]["nrFigures"].as_int_or_die();
-        figures3D figures = drawFigures(configuration, eye, nrFigures, lights);
-        return draw2DzBufferTriangle(size, backgroundColor, figures, lights);
+        return generate_triangle_buffer(configuration, lights);
     }
-    // Case: type == "LightedZBuffering"
     else if (type == "LightedZBuffering")
     {
-        // Get general properties
-        size = configuration["General"]["size"].as_int_or_die();
-        eye = configuration["General"]["eye"].as_double_tuple_or_die();
-        backgroundColor = configuration["General"]["backgroundcolor"].as_double_tuple_or_die();
-        nrFigures = configuration["General"]["nrFigures"].as_int_or_die();
-        // Get all the lights
-        parseLights(configuration, lights);
-        figures3D figures = drawWireframe(eye, nrFigures,
-                                          configuration, lights);
-        return draw2DzBufferTriangle(size, backgroundColor, figures, lights);
-    }
-
-    int width = configuration["ImageProperties"]["width"].as_int_or_die();   // Get width
-    int height = configuration["ImageProperties"]["height"].as_int_or_die(); // Get height
-
-    // Case : type = "IntroColorRectangle"
-    if (type == "IntroColorRectangle")
-    {
-        return createColorRectangle(width, height);
-    }
-    // Case : type == "IntroBlocks"
-    else if (type == "IntroBlocks")
-    {
-        int blocksInX = configuration["BlockProperties"]["nrXBlocks"].as_int_or_die();
-        int blocksInY = configuration["BlockProperties"]["nrYBlocks"].as_int_or_die();
-        vector<double> colorWhite = configuration["BlockProperties"]["colorWhite"].as_double_tuple_or_die();
-        vector<double> colorBlack = configuration["BlockProperties"]["colorBlack"].as_double_tuple_or_die();
-        bool invertColors = configuration["BlockProperties"]["invertColors"].as_bool_or_default(
-            false);
-        return createBlocks(width, height, blocksInX, blocksInY, colorWhite, colorBlack,
-                            invertColors);
-    }
-    // Case : type == "IntroLines"
-    else if (type == "IntroLines")
-    {
-        string figure = configuration["LineProperties"]["figure"].as_string_or_die();
-        backgroundColor = configuration["LineProperties"]["backgroundcolor"].as_double_tuple_or_die();
-        lineColor = configuration["LineProperties"]["lineColor"].as_double_tuple_or_die();
-        int linesNumber = configuration["LineProperties"]["nrLines"].as_int_or_die();
-        // Case: figure == "QuarterCircle"
-        if (figure == "QuarterCircle")
-        {
-            return createQuarterCircle(width, height, linesNumber, backgroundColor,
-                                       lineColor);
-        }
-        // Case: figure == "Eye"
-        if (figure == "Eye")
-        {
-            return createEye(width, height, linesNumber, backgroundColor, lineColor);
-        }
-        // Case: figure == "Diamond"
-        if (figure == "Diamond")
-        {
-            return createDiamond(width, height, linesNumber, backgroundColor,
-                                 lineColor);
-        }
+        return generate_lighted_buffer(configuration, lights);
     }
 
     return {};
